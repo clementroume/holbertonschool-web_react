@@ -90,7 +90,40 @@ class StudentClass implements IStudentClass {
   }
 }
 
-// --- Verification and Usage ---
+/**
+ * =================================================================
+ * PART 4: Usage Examples
+ * =================================================================
+ */
+
+console.log("--- Teacher and Director Tests ---");
+
+// Example of a Teacher object
+const teacher: Teacher = {
+  firstName: 'John',
+  fullTimeEmployee: false,
+  lastName: 'Doe',
+  location: 'London',
+  contract: false, // This additional property is allowed
+};
+console.log(teacher);
+
+// Example of a Director object
+const director: Directors = {
+  firstName: 'Jane',
+  lastName: 'Doe',
+  fullTimeEmployee: true,
+  location: 'Paris',
+  numberOfReports: 17,
+};
+console.log(director);
+
+
+console.log("\n--- printTeacher Function Test ---");
+console.log(printTeacher("John", "Doe")); // Outputs: J. Doe
+
+
+console.log("\n--- StudentClass Tests ---");
 
 // A verification line to ensure the StudentClass
 // conforms to its constructor interface.
