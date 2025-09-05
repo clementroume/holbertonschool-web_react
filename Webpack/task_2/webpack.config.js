@@ -7,11 +7,6 @@ module.exports = {
     filename: 'bundle.js',
     path: path.resolve(__dirname, 'public'),
   },
-
-  performance: {
-    hints: false,
-  },
-
   module: {
     rules: [
       {
@@ -19,7 +14,7 @@ module.exports = {
         use: ['style-loader', 'css-loader'],
       },
       {
-        test: /\.(png|svg|jpg|jpeg|gif)$/i,
+        test: /\.(gif|jpe?g|png|svg)$/i,
         use: [
           'file-loader',
           {

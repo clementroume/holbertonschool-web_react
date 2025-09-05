@@ -2,13 +2,6 @@ import $ from 'jquery';
 import { debounce } from 'lodash';
 import '../css/main.css';
 
-let count = 0;
-
-function updateCounter() {
-  count++;
-  $('#count').text(`${count} clicks on the button`);
-}
-
 $(function () {
   $('body').append("<div id='logo'></div>");
   $('body').append('<p>Holberton Dashboard</p>');
@@ -16,6 +9,13 @@ $(function () {
   $('body').append('<button>Click here to get started</button>');
   $('body').append('<p id="count"></p>');
   $('body').append('<p>Copyright - Holberton School</p>');
+
+  let count = 0;
+
+  function updateCounter() {
+    count++;
+    $('#count').text(`${count} clicks on the button`);
+  }
 
   $('button').on('click', debounce(updateCounter, 500));
 });
