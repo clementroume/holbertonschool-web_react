@@ -8,14 +8,19 @@ module.exports = {
   devtool: 'inline-source-map',
 
   devServer: {
-    static: './public',
+    static: {
+      directory: path.join(__dirname, './public'),
+    },
     port: 8564,
+    open: true,
   },
 
   entry: {
-    header: './modules/header/header.js',
-    body: './modules/body/body.js',
-    footer: './modules/footer/footer.js',
+    all: [
+      './modules/header/header.js',
+      './modules/body/body.js',
+      './modules/footer/footer.js',
+    ],
   },
 
   output: {
