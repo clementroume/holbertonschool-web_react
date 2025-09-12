@@ -1,0 +1,23 @@
+/* Main container for the notifications panel */
+.Notifications {
+  border: 2px dotted #e1003c;
+  padding: 1rem;
+  margin: 1rem;
+  position: relative; /* Needed for the absolute positioning of the close button */
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Style for the unordered list */
+.Notifications ul {
+  padding-left: 2rem;
+}
+
+/* Style for list items with default priority */
+[data-priority='default'] {
+  color: blue;
+}
+
+/* Style for list items with urgent priority */
+[data-priority='urgent'] {
+  color: red;
+}
