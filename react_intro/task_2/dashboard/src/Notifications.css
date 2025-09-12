@@ -1,23 +1,23 @@
-/* Main container for the notifications panel */
-.Notifications {
-  border: 2px dotted #e1003c;
-  padding: 1rem;
+:root {
+  --primary-color: #e1003c;
+}
+
+.notifications {
   margin: 1rem;
-  position: relative; /* Needed for the absolute positioning of the close button */
-  font-family: Arial, Helvetica, sans-serif;
+  position: relative;
+  padding: 1rem;
+  border: 1px dashed var(--primary-color);
 }
 
-/* Style for the unordered list */
-.Notifications ul {
-  padding-left: 2rem;
+.notifications p {
+  margin-bottom: 1rem;
 }
 
-/* Style for list items with default priority */
-[data-priority='default'] {
+.notifications ul {
+  margin-left: 2rem;
+  color: var(--primary-color);
+}
+
+.notifications ul li[data-priority='default'] {
   color: blue;
-}
-
-/* Style for list items with urgent priority */
-[data-priority='urgent'] {
-  color: red;
 }

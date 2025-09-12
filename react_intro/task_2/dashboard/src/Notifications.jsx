@@ -1,14 +1,10 @@
 import './Notifications.css';
-import closeIcon from './assets/close-button.png';
+import closeButton from './assets/close-button.png';
 import { getLatestNotification } from './utils';
 
 function Notifications() {
-  const handleButtonClick = () => {
-    console.log('Close button has been clicked');
-  };
-
   return (
-    <div className="Notifications">
+    <div className="notifications">
       <p>Here is the list of notifications</p>
 
       <button
@@ -16,16 +12,16 @@ function Notifications() {
           position: 'absolute',
           top: '1rem',
           right: '1rem',
-          background: 'none',
+          background: 'transparent',
           border: 'none',
           cursor: 'pointer',
         }}
         aria-label="Close"
-        onClick={handleButtonClick}
+        onClick={() => console.log('close button has been clicked')}
       >
         <img
-          src={closeIcon}
-          alt="close icon"
+          src={closeButton}
+          alt="close"
           style={{ width: '15px', height: '15px' }}
         />
       </button>
@@ -33,10 +29,7 @@ function Notifications() {
       <ul>
         <li data-priority="default">New course available</li>
         <li data-priority="urgent">New resume available</li>
-        <li
-          data-priority="urgent"
-          dangerouslySetInnerHTML={{ __html: getLatestNotification() }}
-        ></li>
+        <li dangerouslySetInnerHTML={{ __html: getLatestNotification() }}></li>
       </ul>
     </div>
   );
