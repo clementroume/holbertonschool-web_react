@@ -1,47 +1,40 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import Notifications from './Notifications';
 
-describe('<Notifications />', () => {
-  // Test 1: Check if the notifications title is rendered.
-  test('renders the notifications title "Here is the list of notifications"', () => {
-    render(<Notifications />);
-    // We look for the text content, ignoring case.
-    const titleElement = screen.getByText(/here is the list of notifications/i);
-    expect(titleElement).toBeInTheDocument();
-  });
+test('Renders the notifications title', () => {
+  render(<Notifications />);
 
-  // Test 2: Check if the button element is rendered.
-  test('renders the close button', () => {
-    render(<Notifications />);
-    // The best way to find a button is by its accessible role and name.
-    const buttonElement = screen.getByRole('button', { name: /close/i });
-    expect(buttonElement).toBeInTheDocument();
-  });
+  const titleElement = screen.getByText(/here is the list of notifications/i);
 
-  // Test 3: Verify that there are 3 list items rendered.
-  test('renders three list items', () => {
-    render(<Notifications />);
-    // We get all elements with the role of 'listitem' (li elements).
-    const listItems = screen.getAllByRole('listitem');
-    // We then check if the array contains exactly 3 items.
-    expect(listItems).toHaveLength(3);
-  });
+  expect(titleElement).toBeInTheDocument();
+});
 
-  // Test 4: Check if clicking the button logs to the console.
-  test('logs "Close button has been clicked" to the console when clicked', () => {
-    // We create a "spy" to watch the console.log function.
-    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+test('Renders the close button', () => {
+  render(<Notifications />);
 
-    render(<Notifications />);
-    const closeButton = screen.getByRole('button', { name: /close/i });
+  const closeButton = screen.getByRole('button', { name: /close/i });
 
-    // We simulate a user click event on the button.
-    fireEvent.click(closeButton);
+  expect(closeButton).toBeInTheDocument();
+});
 
-    // We check if our spy was called with the correct message.
-    expect(consoleLogSpy).toHaveBeenCalledWith('close button has been clicked');
+test('Renders three list items', () => {
+  render(<Notifications />);
 
-    // It's important to restore the original console.log function after the test.
-    consoleLogSpy.mockRestore();
-  });
+  const listItems = screen.getAllByRole('listitem');
+
+  expect(listItems).toHaveLength(3);
+});
+
+test('Logs message when close button is clicked', () => {
+  const consoleLog = jest.spyOn(console, 'log').mockImplementation();
+
+  render(<Notifications />);
+
+  const closeButton = screen.getByRole('button', { name: /close/i });
+
+  fireEvent.click(closeButton);
+
+  expect(consoleLog).toHaveBeenCalledWith('close button has been clicked');
+
+  consoleLog.mockRestore();
 });
