@@ -6,7 +6,7 @@ describe('<Notifications />', () => {
   test('renders the notifications title "Here is the list of notifications"', () => {
     render(<Notifications />);
     // We look for the text content, ignoring case.
-    const titleElement = screen.getByText(/Here is the list of notifications/i);
+    const titleElement = screen.getByText(/here is the list of notifications/i);
     expect(titleElement).toBeInTheDocument();
   });
 
@@ -30,7 +30,7 @@ describe('<Notifications />', () => {
   // Test 4: Check if clicking the button logs to the console.
   test('logs "Close button has been clicked" to the console when clicked', () => {
     // We create a "spy" to watch the console.log function.
-    const consoleLogSpy = jest.spyOn(console, 'log');
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
 
     render(<Notifications />);
     const closeButton = screen.getByRole('button', { name: /close/i });
@@ -39,7 +39,7 @@ describe('<Notifications />', () => {
     fireEvent.click(closeButton);
 
     // We check if our spy was called with the correct message.
-    expect(consoleLogSpy).toHaveBeenCalledWith('Close button has been clicked');
+    expect(consoleLogSpy).toHaveBeenCalledWith('close button has been clicked');
 
     // It's important to restore the original console.log function after the test.
     consoleLogSpy.mockRestore();

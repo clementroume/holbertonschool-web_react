@@ -4,7 +4,7 @@ import { getLatestNotification } from './utils';
 
 function Notifications() {
   const handleButtonClick = () => {
-    console.log('Close button has been clicked');
+    console.log('close button has been clicked');
   };
 
   return (
