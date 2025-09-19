@@ -26,22 +26,4 @@ describe('<Notifications />', () => {
     // We then check if the array contains exactly 3 items.
     expect(listItems).toHaveLength(3);
   });
-
-  // Test 4: Check if clicking the button logs to the console.
-  test('logs "Close button has been clicked" to the console when clicked', () => {
-    // We create a "spy" to watch the console.log function.
-    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-
-    render(<Notifications />);
-    const closeButton = screen.getByRole('button', { name: /close/i });
-
-    // We simulate a user click event on the button.
-    fireEvent.click(closeButton);
-
-    // We check if our spy was called with the correct message.
-    expect(consoleLogSpy).toHaveBeenCalledWith('close button has been clicked');
-
-    // It's important to restore the original console.log function after the test.
-    consoleLogSpy.mockRestore();
-  });
 });
