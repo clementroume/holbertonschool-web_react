@@ -1,5 +1,5 @@
 import './Notifications.css';
-import NotificationItem from './NotificationItem';
+import NotificationItem from './NotificationItem copy';
 import closeButton from '../assets/close-button.png';
 
 function Notifications({ notifications = [] }) {
