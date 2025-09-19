@@ -1,29 +1,40 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import Notifications from './Notifications';
+import { getLatestNotification } from '../utils/utils';
 
-describe('<Notifications />', () => {
-  // Test 1: Check if the notifications title is rendered.
-  test('renders the notifications title "Here is the list of notifications"', () => {
-    render(<Notifications />);
-    // We look for the text content, ignoring case.
-    const titleElement = screen.getByText(/here is the list of notifications/i);
-    expect(titleElement).toBeInTheDocument();
-  });
+const mockNotifications = [
+  {
+    id: 1,
+    type: 'default',
+    value: 'New course available',
+  },
+  {
+    id: 2,
+    type: 'urgent',
+    value: 'New resume available',
+  },
+  {
+    id: 3,
+    type: 'urgent',
+    value: getLatestNotification(),
+  },
+];
 
-  // Test 2: Check if the button element is rendered.
-  test('renders the close button', () => {
-    render(<Notifications />);
-    // The best way to find a button is by its accessible role and name.
-    const buttonElement = screen.getByRole('button', { name: /close/i });
-    expect(buttonElement).toBeInTheDocument();
-  });
+test('Renders 3 notification items with appropriate text', () => {
+  const { getByText, container } = render(
+    <Notifications notifications={mockNotifications} />
+  );
 
-  // Test 3: Verify that there are 3 list items rendered.
-  test('renders three list items', () => {
-    render(<Notifications />);
-    // We get all elements with the role of 'listitem' (li elements).
-    const listItems = screen.getAllByRole('listitem');
-    // We then check if the array contains exactly 3 items.
-    expect(listItems).toHaveLength(3);
-  });
+  expect(getByText('New course available')).toBeInTheDocument();
+  expect(getByText('New resume available')).toBeInTheDocument();
+
+  const notificationItems = container.querySelectorAll('li');
+  expect(notificationItems).toHaveLength(3);
+});
+
+test('Renders with empty notifications array by default', () => {
+  const { container } = render(<Notifications />);
+
+  const notificationItems = container.querySelectorAll('li');
+  expect(notificationItems).toHaveLength(0);
 });
