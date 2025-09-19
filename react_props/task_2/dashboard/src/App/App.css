@@ -8,12 +8,7 @@
   scroll-behavior: smooth;
 }
 
-/* VARIABLES */
-:root {
-  --primary-color: #e1003c;
-}
-
-/* ROOT */
+/* GENERAL */
 #root {
   height: 100vh;
   display: flex;
