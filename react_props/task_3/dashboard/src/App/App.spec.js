@@ -1,34 +1,41 @@
-import App from './App.jsx';
+import App from './App.jsx'
 import { render, screen } from '@testing-library/react';
 
 test('Renders Notifications component', () => {
-  render(<App />);
+    render(<App />);
 
-  const notification = screen.getByText(/notifications/i);
+    const notification = screen.getByText(/notifications/i);
 
-  expect(notification).toBeInTheDocument();
+    expect(notification).toBeInTheDocument();
 });
 
 test('Renders Header component', () => {
-  render(<App />);
+    render(<App />);
 
-  const header = screen.getByText(/school dashboard/i);
+    const header = screen.getByText(/school dashboard/i);
 
-  expect(header).toBeInTheDocument();
+    expect(header).toBeInTheDocument();
 });
 
 test('Renders Login component', () => {
-  render(<App />);
+    render(<App />);
 
-  const loginText = screen.getByText(/login to access the full dashboard/i);
+    const loginText = screen.getByText(/login to access the full dashboard/i);
 
-  expect(loginText).toBeInTheDocument();
+    expect(loginText).toBeInTheDocument();
 });
 
 test('Renders Footer component', () => {
-  render(<App />);
+    render(<App />);
 
-  const footer = screen.getByText(/copyright/i);
-
-  expect(footer).toBeInTheDocument();
+    const footer = screen.getByText(/copyright/i);
+    
+    expect(footer).toBeInTheDocument();
 });
+
+
+
+
+
+
+
