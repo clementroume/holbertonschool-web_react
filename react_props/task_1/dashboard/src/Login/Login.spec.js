@@ -1,8 +1,8 @@
-import App from '../App/App';
+import Login from './Login';
 import { render, screen } from '@testing-library/react';
 
 test('Render 2 input elements', () => {
-  render(<App />);
+  render(<Login />);
 
   const emailInput = screen.getByRole('textbox');
   const passwordInput = screen.getByLabelText(/Password/i);
@@ -12,7 +12,7 @@ test('Render 2 input elements', () => {
 });
 
 test('Render 2 label elements with the text "Email:" and "Password:"', () => {
-  render(<App />);
+  render(<Login />);
 
   const emailLabel = screen.getByText(/email:/i);
   const passwordLabel = screen.getByText(/password:/i);
@@ -22,7 +22,7 @@ test('Render 2 label elements with the text "Email:" and "Password:"', () => {
 });
 
 test('Render a button with the text "OK"', () => {
-  render(<App />);
+  render(<Login />);
 
   const button = screen.getByRole('button', { name: /ok/i });
 
@@ -30,7 +30,7 @@ test('Render a button with the text "OK"', () => {
 });
 
 test('focuses the input when its label is clicked', async () => {
-  const { container } = render(<App />);
+  const { container } = render(<Login />);
   const user = userEvent.setup();
 
   const emailLabel = container.querySelector('label[for="email"]');
