@@ -8,14 +8,12 @@ import CourseList from '../CourseList/CourseList';
 import BodySection from '../BodySection/BodySection';
 import BodySectionWithMarginBottom from '../BodySection/BodySectionWithMarginBottom';
 import WithLogging from '../HOC/WithLogging';
-import { getLatestNotification } from "../utils/utils";
+import { getLatestNotification } from '../utils/utils';
 
 const LoginWithLogging = WithLogging(Login);
 const CourseListWithLogging = WithLogging(CourseList);
 
-// Styles Aphrodite
 const styles = StyleSheet.create({
-  // Reset CSS global
   reset: {
     '*': {
       boxSizing: 'border-box',
@@ -32,7 +30,7 @@ const styles = StyleSheet.create({
       boxSizing: 'border-box',
       margin: 0,
       padding: 0,
-    }
+    },
   },
   app: {
     minHeight: '100vh',
@@ -49,18 +47,34 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif",
+    fontFamily:
+      "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif",
     fontSize: '0.8rem',
     fontWeight: 200,
     fontStyle: 'italic',
     borderTop: '0.25rem solid #e1003c',
-  }
+  },
 });
 
 class App extends Component {
   static defaultProps = {
     isLoggedIn: false,
-    logOut: () => { }
+    logOut: () => {},
+  };
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      displayDrawer: false,
+    };
+  }
+
+  handleDisplayDrawer = () => {
+    this.setState({ displayDrawer: true });
+  };
+
+  handleHideDrawer = () => {
+    this.setState({ displayDrawer: false });
   };
 
   handleKeyDown = (event) => {
@@ -71,7 +85,7 @@ class App extends Component {
   };
 
   componentDidMount() {
-    document.addEventListener("keydown", this.handleKeyDown);
+    document.addEventListener('keydown', this.handleKeyDown);
 
     const resetCSS = `
       *,
@@ -105,42 +119,47 @@ class App extends Component {
     const notificationsList = [
       {
         id: 1,
-        type: "default",
-        value: "New course available"
+        type: 'default',
+        value: 'New course available',
       },
       {
         id: 2,
-        type: "urgent",
-        value: "New resume available"
+        type: 'urgent',
+        value: 'New resume available',
       },
       {
         id: 3,
-        type: "urgent",
-        value: getLatestNotification()
-      }
+        type: 'urgent',
+        value: getLatestNotification(),
+      },
     ];
 
     const coursesList = [
       {
         id: 1,
         name: 'ES6',
-        credit: 60
+        credit: 60,
       },
       {
         id: 2,
         name: 'Webpack',
-        credit: 20
+        credit: 20,
       },
       {
         id: 3,
         name: 'React',
-        credit: 40
-      }
+        credit: 40,
+      },
     ];
 
     return (
       <div className={css(styles.app)}>
-        <Notifications notifications={notificationsList} />
+        <Notifications
+          notifications={notificationsList}
+          displayDrawer={this.state.displayDrawer}
+          handleDisplayDrawer={this.handleDisplayDrawer}
+          handleHideDrawer={this.handleHideDrawer}
+        />
 
         <Header />
 
