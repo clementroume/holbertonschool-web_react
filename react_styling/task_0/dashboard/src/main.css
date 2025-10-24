@@ -1,0 +1,40 @@
+/* src/main.css */
+
+/* importe Tailwind via le plugin Vite (v4 recommande simplement @import "tailwindcss") */
+@import 'tailwindcss';
+
+/* Configuration CSS-first (Tailwind v4) : définir la famille de fontes */
+@theme {
+  /* on définit une variable de thème pour la police principale */
+  --font-sans: 'Roboto', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    'Helvetica Neue', Arial;
+}
+
+/* utiliser @layer base pour appliquer la police par défaut à toute l'app */
+@layer base {
+  html,
+  body {
+    height: 100%;
+    /* applique Roboto par défaut sur toute l'application */
+    font-family: var(--font-sans);
+  }
+
+  /* réglages typographiques de base (optionnel mais utile) */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 700; /* headings en Roboto 700 (sera fourni par @fontsource) */
+  }
+
+  strong {
+    font-weight: 700;
+  }
+
+  /* corps de texte par défaut en 400 (normal) */
+  body {
+    font-weight: 400;
+  }
+}
