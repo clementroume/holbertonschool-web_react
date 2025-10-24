@@ -33,6 +33,10 @@
     font-weight: 700;
   }
 
+  em {
+    font-weight: 500;
+  }
+
   /* corps de texte par défaut en 400 (normal) */
   body {
     font-weight: 400;
