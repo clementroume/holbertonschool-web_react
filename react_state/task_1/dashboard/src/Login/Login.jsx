@@ -13,8 +13,10 @@ class Login extends React.Component {
   }
 
   validateEmail = (email) => {
-    const re = /^\S+@\S+\.\S+$/;
-    return re.test(email);
+    if (!email || typeof email !== 'string') return false;
+    const e = email.trim();
+    const re = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    return re.test(e);
   };
 
   updateEnableSubmit = (email, password) => {
