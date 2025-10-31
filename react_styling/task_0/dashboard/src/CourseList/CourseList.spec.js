@@ -1,25 +1,32 @@
-import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import CourseList from './CourseList';
 
-test('renders 5 different rows when it receives an array of courses objects', () => {
-    const courses = [
-        { id: 1, name: "ES6", credit: "60" },
-        { id: 2, name: "Webpack", credit: "20" },
-        { id: 3, name: "React", credit: "40" }
-    ];
 
-    const { container } = render(<CourseList courses={courses} />);
+test('it should render the CourseList component with 5 rows', () => {
+  const props = {
+    courses : [
+      { id:1, name:'ES6', credit:60 },
+      { id:2, name:'Webpack', credit:20 },
+      { id:3, name:'React', credit:40 }
+    ]
+  }
+  render(<CourseList {...props} />)
 
-    const allRows = container.querySelectorAll('tr');
-    expect(allRows).toHaveLength(5);
-});
+  const rowElements = screen.getAllByRole('row');
 
-test('renders 1 row whenever it receives an empty array', () => {
-    const { container } = render(<CourseList courses={[]} />);
+  expect(rowElements).toHaveLength(5)
+})
 
-    const allRows = container.querySelectorAll('tr');
-    expect(allRows).toHaveLength(1); // Changé de 3 à 1
+test('it should render the CourseList component with 1 row', () => {
+  const props = {
+    courses : []
+  }
 
-    expect(container).toHaveTextContent('No course available yet');
+  render(<CourseList {...props} />)
+
+  const rowElement = screen.getAllByRole('row');
+  const rowText = screen.getByText(/No course available yet/i);
+
+  expect(rowElement).toHaveLength(1)
+  expect(rowText).toBeInTheDocument()
 });

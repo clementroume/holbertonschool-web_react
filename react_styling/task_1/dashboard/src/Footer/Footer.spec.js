@@ -1,23 +1,11 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { StyleSheetTestUtils } from 'aphrodite';
 import Footer from './Footer';
+import { getCurrentYear, getFooterCopy } from '../utils/utils';
 
-beforeEach(() => {
-    StyleSheetTestUtils.suppressStyleInjection();
-});
+test('it should rendered without crashing', () => {
+  render(<Footer />)
 
-afterEach(() => {
-    StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
-});
+  const footerParagraph = screen.getByText(`Copyright ${getCurrentYear()} - ${getFooterCopy(true)}`);
 
-test('renders correct text content in p elements', () => {
-    render(<Footer />);
-
-    const currentYear = new Date().getFullYear();
-    const footerParagraph = screen.getByText(
-        new RegExp(`copyright ${currentYear}.*holberton school`, 'i')
-    );
-
-    expect(footerParagraph).toBeInTheDocument();
-});
+  expect(footerParagraph).toHaveTextContent(/copyright 2025 - holberton School/i)
+})

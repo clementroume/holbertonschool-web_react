@@ -1,14 +1,11 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import Footer from './Footer';
+import { getCurrentYear, getFooterCopy } from '../utils/utils';
 
-test('renders correct text content in p elements', () => {
-    render(<Footer />);
+test('it should rendered without crashing', () => {
+  render(<Footer />)
 
-    const currentYear = new Date().getFullYear();
-    const footerParagraph = screen.getByText(
-        new RegExp(`copyright ${currentYear}.*holberton school`, 'i')
-    );
+  const footerParagraph = screen.getByText(`Copyright ${getCurrentYear()} - ${getFooterCopy(true)}`);
 
-    expect(footerParagraph).toBeInTheDocument();
-});
+  expect(footerParagraph).toHaveTextContent(/copyright 2025 - holberton School/i)
+})

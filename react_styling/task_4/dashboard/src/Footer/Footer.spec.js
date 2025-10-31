@@ -1,23 +1,12 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { StyleSheetTestUtils } from 'aphrodite';
 import Footer from './Footer';
+import { getCurrentYear, getFooterCopy } from '../utils/utils';
 
-beforeEach(() => {
-    StyleSheetTestUtils.suppressStyleInjection();
-});
+test('It should render footer with copyright text', () => {
+  render(<Footer />)
 
-afterEach(() => {
-    StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
-});
+  const footerParagraph = screen.getByText(/copyright/i);
 
-test('renders correct text content in p elements', () => {
-    render(<Footer />);
-
-    const currentYear = new Date().getFullYear();
-    const footerParagraph = screen.getByText(
-        new RegExp(`copyright ${currentYear}.*holberton school`, 'i')
-    );
-
-    expect(footerParagraph).toBeInTheDocument();
+  expect(footerParagraph).toHaveTextContent(new RegExp(`copyright ${(new Date()).getFullYear()}`, 'i'))
+  expect(footerParagraph).toHaveTextContent(/holberton school/i)
 });

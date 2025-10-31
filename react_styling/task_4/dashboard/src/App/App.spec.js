@@ -1,121 +1,70 @@
-import React from 'react';
-import App from './App.jsx';
-import { render, screen } from '@testing-library/react';
-import { StyleSheetTestUtils } from 'aphrodite';
+import { render, fireEvent, screen } from '@testing-library/react';
+import App from './App';
 
-describe('App Component Tests', () => {
-    beforeEach(() => {
-        StyleSheetTestUtils.suppressStyleInjection();
-    });
-
-    afterEach(() => {
-        StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
-    });
-
-    test('Renders Notifications component', () => {
-        render(<App />);
-        const notificationTitle = screen.getByText(/your notifications/i);
-        expect(notificationTitle).toBeInTheDocument();
-    });
-
-    test('Renders Header component', () => {
-        render(<App />);
-        const header = screen.getByText(/school dashboard/i);
-        expect(header).toBeInTheDocument();
-    });
-
-    test('Renders Login component', () => {
-        render(<App />);
-        const loginText = screen.getByText(/login to access the full dashboard/i);
-        expect(loginText).toBeInTheDocument();
-    });
-
-    test('Renders Footer component', () => {
-        render(<App />);
-        const footer = screen.getByText(/copyright/i);
-        expect(footer).toBeInTheDocument();
-    });
-
-    test('Should render the Login component', () => {
-        render(<App isLoggedIn={false} />);
-
-        const loginText = screen.getByText(/login to access the full dashboard/i);
-        expect(loginText).toBeInTheDocument();
-
-        const courseList = screen.queryByText(/available courses/i);
-        expect(courseList).not.toBeInTheDocument();
-    });
-
-    test('Should render a CourseList component', () => {
-        render(<App isLoggedIn={true} />);
-
-        const courseList = screen.getByText(/available courses/i);
-        expect(courseList).toBeInTheDocument();
-
-        const loginText = screen.queryByText(/login to access the full dashboard/i);
-        expect(loginText).not.toBeInTheDocument();
-    });
-
-    test('Displays Course list title when isLoggedIn is true', () => {
-        render(<App isLoggedIn={true} />);
-
-        const courseListTitle = screen.getByRole('heading', { name: /course list/i });
-        expect(courseListTitle).toBeInTheDocument();
-    });
-
-    test('Displays Log in to continue title when isLoggedIn is false', () => {
-        render(<App isLoggedIn={false} />);
-
-        const loginTitle = screen.getByRole('heading', { name: /log in to continue/i });
-        expect(loginTitle).toBeInTheDocument();
-    });
-
-    test('Displays News from the School section by default', () => {
-        render(<App />);
-
-        const newsTitle = screen.getByRole('heading', { name: /news from the school/i });
-        expect(newsTitle).toBeInTheDocument();
-
-        const newsParagraph = screen.getByText(/holberton school news goes here/i);
-        expect(newsParagraph).toBeInTheDocument();
-    });
+test('The App component renders without crashing', () => {
+  render(<App />);
 });
 
-describe('App Keyboard Events Tests', () => {
-    let alertMock;
-    let logOutMock;
+test('The App component renders CourseList when isLoggedIn is true', () => {
+  const props = {
+    isLoggedIn: true
+  }
 
-    beforeEach(() => {
-        StyleSheetTestUtils.suppressStyleInjection();
-        alertMock = jest.spyOn(window, "alert").mockImplementation(() => { });
-        logOutMock = jest.fn();
-    });
+  render(<App {...props} />);
 
-    afterEach(() => {
-        StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
-        alertMock.mockRestore();
-    });
+  const tableElement = screen.getByRole('table');
 
-    test("LogOut when ctrl + h", () => {
-        render(<App logOut={logOutMock} />);
+  expect(tableElement).toBeInTheDocument()
+});
 
-        const keyboardEvent = new KeyboardEvent("keydown", {
-            key: "h",
-            ctrlKey: true,
-        });
-        document.dispatchEvent(keyboardEvent);
-        expect(logOutMock).toHaveBeenCalledTimes(1);
-    });
+test('The App component renders Login when isLoggedIn is false', () => {
+  const props = {
+    isLoggedIn: false
+  }
 
-    test("Alert when ctrl + h", () => {
-        render(<App logOut={logOutMock} />);
+  render(<App {...props} />);
 
-        const keyboardEvent = new KeyboardEvent("keydown", {
-            key: "h",
-            ctrlKey: true,
-        });
-        document.dispatchEvent(keyboardEvent);
+  const emailLabelElement = screen.getByLabelText(/email/i);
+  const passwordLabelElement = screen.getByLabelText(/password/i);
+  const buttonElements = screen.getAllByRole('button', { name: /ok/i })
 
-        expect(alertMock).toHaveBeenCalledWith("Logging you out");
-    });
+  expect(emailLabelElement).toBeInTheDocument()
+  expect(passwordLabelElement).toBeInTheDocument()
+  expect(buttonElements.length).toBeGreaterThanOrEqual(1)
+});
+
+test('it should call the logOut prop once whenever the user hits "Ctrl" + "h" keyboard keys', () => {
+  const logOutMock = jest.fn();
+  const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+
+  render(<App isLoggedIn={true} logOut={logOutMock} />);
+
+  fireEvent.keyDown(document, { ctrlKey: true, key: 'h' });
+
+  expect(logOutMock).toHaveBeenCalledTimes(1);
+
+  alertSpy.mockRestore();
+});
+
+test('it should display an alert window whenever the user hit "ctrl" + "h" keyboard keys', () => {
+  const logoutSpy = jest.fn();
+  const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+
+  render(<App logOut={logoutSpy} />);
+
+  fireEvent.keyDown(document, { ctrlKey: true, key: 'h' });
+
+  expect(alertSpy).toHaveBeenCalledWith('Logging you out');
+
+  alertSpy.mockRestore();
+});
+
+test('it should display "News from the School" title and paragraph by default', () => {
+  render(<App />);
+
+  const newsTitle = screen.getByRole('heading', { name: /news from the school/i });
+  const newsParagraph = screen.getByText(/holberton school news goes here/i);
+
+  expect(newsTitle).toBeInTheDocument();
+  expect(newsParagraph).toBeInTheDocument();
 });

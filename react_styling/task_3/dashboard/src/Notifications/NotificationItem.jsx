@@ -1,80 +1,36 @@
-import React, { PureComponent, createRef } from 'react';
-import { StyleSheet, css } from 'aphrodite';
+import React, { PureComponent } from 'react';
 
-const styles = StyleSheet.create({
-  default: {
-    color: 'blue',
-    '@media (max-width: 900px)': {
-      borderBottom: '1px solid black',
-      padding: '10px 8px',
-    },
-  },
-  urgent: {
-    color: 'red',
-    '@media (max-width: 900px)': {
-      borderBottom: '1px solid black',
-      padding: '10px 8px',
-    },
-  },
-});
-
-class NotificationItem extends PureComponent {
-  constructor(props) {
-    super(props);
-    this.liRef = createRef();
-  }
-
-  handleClick = () => {
-    const { id, markAsRead } = this.props;
-    if (markAsRead) {
-      markAsRead(id);
-    }
-  };
-
-  containsHTML = (str) => {
-    return typeof str === 'string' && /<\/?[a-z][\s\S]*>/i.test(str);
-  };
-
+export default class NotificationItem extends PureComponent {
   render() {
-    const { type = 'default', html, value } = this.props;
-
-    const styleClass = type === 'urgent' ? styles.urgent : styles.default;
-
-    if (html) {
+    const { type, html, value, markAsRead, id } = this.props;
+    // this console.log is only for test purposes and not mentionned/required in the student code
+    // console.log(`Rendering NotificationItem with id: ${id}, type: ${type}, value: ${value}`);
+    
+    if (type === 'default') {
       return (
-        <li
-          ref={this.liRef}
-          className={css(styleClass)}
+        <li 
+          className="text-[color:var(--default-notification-item)] pl-1"
           data-notification-type={type}
+          onClick={() => markAsRead(id)}
+        >{value}</li>
+      );
+    } else if (type === 'urgent' && html !== undefined) {
+      return (
+        <li 
+          className="text-[color:var(--urgent-notification-item)] pl-1"
+          data-notification-type={type} 
           dangerouslySetInnerHTML={html}
-          onClick={this.handleClick}
-        />
+          onClick={() => markAsRead(id)}
+        ></li>
       );
-    }
-
-    if (value && this.containsHTML(value)) {
+    } else {
       return (
-        <li
-          ref={this.liRef}
-          className={css(styleClass)}
+        <li 
+          className="text-[color:var(--urgent-notification-item)] pl-1"
           data-notification-type={type}
-          dangerouslySetInnerHTML={{ __html: value }}
-          onClick={this.handleClick}
-        />
+          onClick={() => markAsRead(id)}
+        >{value}</li>
       );
     }
-
-    return (
-      <li
-        ref={this.liRef}
-        className={css(styleClass)}
-        data-notification-type={type}
-        onClick={this.handleClick}
-      >
-        {value}
-      </li>
-    );
   }
 }
-
-export default NotificationItem;
