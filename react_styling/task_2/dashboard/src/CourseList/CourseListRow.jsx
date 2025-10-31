@@ -1,17 +1,23 @@
 export default function CourseListRow({
   isHeader = false,
   textFirstCell = '',
-  textSecondCell = null
+  textSecondCell = null,
 }) {
+  const headerBg = 'rgba(222, 181, 181, 0.66)';
+  const rowBg = 'rgba(205, 205, 205, 0.45)';
   return (
-    <tr className={isHeader
-      ? "bg-[color-mix(in_srgb,var(--color-table-header)_66%,transparent)]"
-      : "bg-[color-mix(in_srgb,var(--color-table-rows)_45%,transparent)]"
-    }>
+    <tr style={{ backgroundColor: isHeader ? headerBg : rowBg }}>
       {isHeader ? (
         <>
-          <th className="border border-gray-400" colSpan={textSecondCell ? 1 : 2}>{textFirstCell}</th>
-          {textSecondCell && <th className="border border-gray-400">{textSecondCell}</th>}
+          <th
+            className="border border-gray-400"
+            colSpan={textSecondCell ? 1 : 2}
+          >
+            {textFirstCell}
+          </th>
+          {textSecondCell && (
+            <th className="border border-gray-400">{textSecondCell}</th>
+          )}
         </>
       ) : (
         <>
@@ -20,5 +26,5 @@ export default function CourseListRow({
         </>
       )}
     </tr>
-  )
+  );
 }
