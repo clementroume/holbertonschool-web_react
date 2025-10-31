@@ -3,10 +3,14 @@ export default function CourseListRow({
   textFirstCell = '',
   textSecondCell = null,
 }) {
-  const headerBg = 'rgba(222, 181, 181, 0.66)';
-  const rowBg = 'rgba(205, 205, 205, 0.45)';
   return (
-    <tr style={{ backgroundColor: isHeader ? headerBg : rowBg }}>
+    <tr
+      className={
+        isHeader
+          ? 'bg-[color-mix(in_srgb,var(--color-table-header)_66%,transparent)]'
+          : 'bg-[color-mix(in_srgb,var(--color-table-rows)_45%,transparent)]'
+      }
+    >
       {isHeader ? (
         <>
           <th
