@@ -1,95 +1,131 @@
-import React from 'react';
-import WithLogging from '../HOC/WithLogging';
+import React, { Component } from 'react';
+import { StyleSheet, css } from 'aphrodite';
 
-class Login extends React.Component {
+class Login extends Component {
+  static defaultProps = {
+    email: '',
+    password: '',
+    logIn: () => { },
+  };
+
   constructor(props) {
     super(props);
     this.state = {
       email: props.email || '',
       password: props.password || '',
-      enableSubmit: false,
     };
+    this.emailRef = React.createRef();
+    this.passwordRef = React.createRef();
   }
 
-  validateEmail = (email) => {
-    if (!email || typeof email !== 'string') return false;
-    const e = email.trim();
-    const re = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-    return re.test(e);
-  };
+  styles = StyleSheet.create({
+    AppBody: {
+      padding: '2rem',
+      flex: 1,
+    },
+    AppBodyP: {
+      marginBottom: '1rem',
+    },
+    form: {
+      display: 'flex',
+      flexDirection: 'row',
+      justifyContent: 'flex-start',
+      alignItems: 'center',
+      gap: '1rem',
+      '@media (max-width: 900px)': {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '0.5rem',
+      },
+    },
+    formInput: {
+      padding: '0 0.25rem',
+    },
+    formButton: {
+      padding: '0 0.25rem',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+  });
 
-  updateEnableSubmit = (email, password) => {
-    const validEmail = this.validateEmail(email);
-    const validPassword = typeof password === 'string' && password.length >= 8;
-    this.setState({ enableSubmit: validEmail && validPassword });
+  validateEmail = (value) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(value);
   };
 
   handleChangeEmail = (e) => {
-    const email = e.target.value;
-    this.setState({ email }, () => {
-      this.updateEnableSubmit(this.state.email, this.state.password);
-    });
+    const value = e.target.value;
+    this.setState({ email: value });
   };
 
   handleChangePassword = (e) => {
-    const password = e.target.value;
-    this.setState({ password }, () => {
-      this.updateEnableSubmit(this.state.email, this.state.password);
-    });
+    const value = e.target.value;
+    this.setState({ password: value });
   };
 
   handleLoginSubmit = (e) => {
     e.preventDefault();
-    if (this.props.logIn) {
+    if (typeof this.props.logIn === 'function') {
       this.props.logIn(this.state.email, this.state.password);
     }
   };
 
   render() {
-    const { email, password, enableSubmit } = this.state;
+    const emailOk =
+      this.state.email.length > 0 && this.validateEmail(this.state.email);
+    const passwordOk = this.state.password.length >= 8;
+
+    let isSubmitEnabled = false;
+    if (emailOk && passwordOk) {
+      isSubmitEnabled = true;
+    }
 
     return (
-      <div className="App-body flex flex-col p-5 pl-1 h-[45vh] border-t-4 border-[color:var(--main-color)]">
-        <p className="text-xl mb-4">Login to access the full dashboard</p>
-
-        <form onSubmit={this.handleLoginSubmit}>
-          <div className="text-lg flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0">
-            <label htmlFor="email" className="sm:pr-2">
-              Email
-            </label>
-            <input
-              type="email"
-              name="user_email"
-              id="email"
-              className="border rounded w-3/5 sm:w-auto px-2 py-1"
-              value={email}
-              onChange={this.handleChangeEmail}
-            />
-
-            <label htmlFor="password" className="sm:pl-2 sm:pr-2">
-              Password
-            </label>
-            <input
-              type="password"
-              name="user_password"
-              id="password"
-              className="border rounded w-3/5 sm:w-auto px-2 py-1"
-              value={password}
-              onChange={this.handleChangePassword}
-            />
-
-            <input
-              type="submit"
-              value="OK"
-              className="cursor-pointer border px-1 rounded sm:ml-2 w-fit"
-              disabled={!enableSubmit}
-            />
-          </div>
+      <div className={css(this.styles.AppBody)}>
+        <p className={css(this.styles.AppBodyP)}>Login to access the full dashboard</p>
+        <form role="form" aria-label="login form" className={css(this.styles.form)} onSubmit={this.handleLoginSubmit}>
+          <label
+            htmlFor="email"
+            onClick={() => this.emailRef.current && this.emailRef.current.focus()}
+          >
+            Email:
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            ref={this.emailRef}
+            className={css(this.styles.formInput)}
+            value={this.state.email}
+            onChange={this.handleChangeEmail}
+          />
+          <label
+            htmlFor="password"
+            onClick={() => this.passwordRef.current && this.passwordRef.current.focus()}
+          >
+            Password:
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            role="textbox"
+            ref={this.passwordRef}
+            className={css(this.styles.formInput)}
+            value={this.state.password}
+            onChange={this.handleChangePassword}
+          />
+          <input
+            type="submit"
+            value="OK"
+            className={css(this.styles.formButton)}
+            disabled={!isSubmitEnabled}
+          />
         </form>
       </div>
     );
   }
 }
 
-const LoginWithLogging = WithLogging(Login);
-export default LoginWithLogging;
+export default Login;

@@ -1,34 +1,74 @@
-import React, { PureComponent } from 'react';
+import React, { PureComponent, createRef } from 'react';
+import { StyleSheet, css } from 'aphrodite';
 
-export default class NotificationItem extends PureComponent {
-  render() {
-    const { type, html, value, markAsRead, id } = this.props;
-    
-    if (type === 'default') {
-      return (
-        <li 
-          className="text-[color:var(--default-notification-item)] pl-1 max-[912px]:text-[20px] max-[912px]:w-full max-[912px]:border-b max-[912px]:border-black max-[912px]:p-[10px_8px]"
-          data-notification-type={type}
-          onClick={() => markAsRead(id)}
-        >{value}</li>
-      );
-    } else if (type === 'urgent' && html !== undefined) {
-      return (
-        <li 
-          className="text-[color:var(--urgent-notification-item)] pl-1 max-[912px]:text-[20px] max-[912px]:w-full max-[912px]:border-b max-[912px]:border-black max-[912px]:p-[10px_8px]"
-          data-notification-type={type} 
-          dangerouslySetInnerHTML={html}
-          onClick={() => markAsRead(id)}
-        ></li>
-      );
-    } else {
-      return (
-        <li 
-          className="text-[color:var(--urgent-notification-item)] pl-1 max-[912px]:text-[20px] max-[912px]:w-full max-[912px]:border-b max-[912px]:border-black max-[912px]:p-[10px_8px]"
-          data-notification-type={type}
-          onClick={() => markAsRead(id)}
-        >{value}</li>
-      );
+const styles = StyleSheet.create({
+    default: {
+        color: 'blue',
+        cursor: 'pointer',
+    },
+    urgent: {
+        color: 'red',
+        cursor: 'pointer',
     }
-  }
+});
+
+class NotificationItem extends PureComponent {
+    constructor(props) {
+        super(props);
+        this.liRef = createRef();
+    }
+
+    handleClick = () => {
+        const { id, markAsRead } = this.props;
+        if (markAsRead) {
+            markAsRead(id);
+        }
+    }
+
+    containsHTML = (str) => {
+        return typeof str === 'string' && /<\/?[a-z][\s\S]*>/i.test(str);
+    };
+
+    render() {
+        const { type = 'default', html, value } = this.props;
+
+        const styleClass = type === 'urgent' ? styles.urgent : styles.default;
+
+        if (html) {
+            return (
+                <li
+                    ref={this.liRef}
+                    className={css(styleClass)}
+                    data-notification-type={type}
+                    dangerouslySetInnerHTML={html}
+                    onClick={this.handleClick}
+                />
+            );
+        }
+
+        if (value && this.containsHTML(value)) {
+            return (
+                <li
+                    ref={this.liRef}
+                    className={css(styleClass)}
+                    data-notification-type={type}
+                    dangerouslySetInnerHTML={{ __html: value }}
+                    onClick={this.handleClick}
+                />
+            );
+        }
+
+        return (
+            <li
+                ref={this.liRef}
+                className={css(styleClass)}
+                data-notification-type={type}
+                onClick={this.handleClick}
+            >
+                {value}
+            </li>
+        );
+    }
 }
+
+export default NotificationItem;

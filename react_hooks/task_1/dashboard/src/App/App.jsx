@@ -1,13 +1,61 @@
-import { Component } from 'react';
+import React, { Component } from 'react';
+import { StyleSheet, css } from 'aphrodite';
 import Notifications from '../Notifications/Notifications';
-import Footer from '../Footer/Footer';
 import Header from '../Header/Header';
 import Login from '../Login/Login';
+import Footer from '../Footer/Footer';
 import CourseList from '../CourseList/CourseList';
-import { getLatestNotification } from '../utils/utils';
-import BodySectionWithMarginBottom from '../BodySection/BodySectionWithMarginBottom';
 import BodySection from '../BodySection/BodySection';
-import newContext from '../Context/context';
+import BodySectionWithMarginBottom from '../BodySection/BodySectionWithMarginBottom';
+import WithLogging from '../HOC/WithLogging';
+import { getLatestNotification } from '../utils/utils';
+import { newContext, defaultUser } from '../Context/context';
+
+const LoginWithLogging = WithLogging(Login);
+const CourseListWithLogging = WithLogging(CourseList);
+
+const styles = StyleSheet.create({
+  reset: {
+    '*': {
+      boxSizing: 'border-box',
+      margin: 0,
+      padding: 0,
+      scrollBehavior: 'smooth',
+    },
+    '*::before': {
+      boxSizing: 'border-box',
+      margin: 0,
+      padding: 0,
+    },
+    '*::after': {
+      boxSizing: 'border-box',
+      margin: 0,
+      padding: 0,
+    },
+  },
+  app: {
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  body: {
+    flex: 1,
+    padding: '20px',
+  },
+  footer: {
+    padding: '1rem',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    fontFamily:
+      "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif",
+    fontSize: '0.8rem',
+    fontWeight: 200,
+    fontStyle: 'italic',
+    borderTop: '0.25rem solid #e1003c',
+  },
+});
 
 const notificationsList = [
   { id: 1, type: 'default', value: 'New course available' },
@@ -21,123 +69,158 @@ const coursesList = [
   { id: 3, name: 'React', credit: 40 },
 ];
 
-export default class App extends Component {
+class App extends Component {
   constructor(props) {
     super(props);
 
+    this.logIn = this.logIn.bind(this);
+    this.logOut = this.logOut.bind(this);
+    this.handleDisplayDrawer = this.handleDisplayDrawer.bind(this);
+    this.handleHideDrawer = this.handleHideDrawer.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.markNotificationAsRead = this.markNotificationAsRead.bind(this);
+
     this.state = {
-      displayDrawer: false,
-      notifications: notificationsList.slice(),
-      courses: coursesList.slice(),
-      context: {
-        user: {
-          email: '',
-          password: '',
-          isLoggedIn: false,
-        },
+      user: { ...defaultUser },
+      logOut: this.logOut,
+      contextValue: {
+        user: { ...defaultUser },
         logOut: this.logOut,
       },
+
+      notifications: notificationsList,
+      courses: coursesList,
+
+      displayDrawer: true,
     };
   }
 
+  logIn(email, password) {
+    const user = {
+      email: email || '',
+      password: password || '',
+      isLoggedIn: true,
+    };
+    
+    // Utiliser un callback pour éviter les problèmes de timing
+    this.setState((prevState) => ({
+      user,
+      contextValue: {
+        user,
+        logOut: this.logOut,
+      },
+    }));
+  }
+
+  logOut() {
+    const user = { ...defaultUser };
+    
+    // Utiliser un callback pour éviter les problèmes de timing
+    this.setState((prevState) => ({
+      user,
+      contextValue: {
+        user,
+        logOut: this.logOut,
+      },
+    }));
+  }
+
+  handleDisplayDrawer() {
+    this.setState({ displayDrawer: true });
+  }
+
+  handleHideDrawer() {
+    this.setState({ displayDrawer: false });
+  }
+
+  handleKeyDown(event) {
+    if (event.ctrlKey && event.key === 'h') {
+      alert('Logging you out');
+      this.logOut();
+    }
+  }
+
   componentDidMount() {
-    document.addEventListener('keydown', this.handleKeydown);
+    document.addEventListener('keydown', this.handleKeyDown);
+
+    const resetCSS = `
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        scroll-behavior: smooth;
+      }
+
+      #root {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+    `;
+
+    const style = document.createElement('style');
+    style.textContent = resetCSS;
+    document.head.appendChild(style);
   }
 
   componentWillUnmount() {
-    document.removeEventListener('keydown', this.handleKeydown);
+    document.removeEventListener('keydown', this.handleKeyDown);
   }
 
-  handleKeydown = (e) => {
-    if (e.ctrlKey && e.key === 'h') {
-      alert('Logging you out');
-      if (this.state.context && this.state.context.logOut) {
-        this.state.context.logOut();
-      }
-    }
-  };
-
-  handleDisplayDrawer = () => {
-    this.setState({ displayDrawer: true });
-  };
-
-  handleHideDrawer = () => {
-    this.setState({ displayDrawer: false });
-  };
-
-  logIn = (email, password) => {
-    this.setState((prev) => ({
-      context: {
-        ...prev.context,
-        user: {
-          email,
-          password,
-          isLoggedIn: true,
-        },
-        logOut: prev.context.logOut || this.logOut,
-      },
-    }));
-  };
-
-  logOut = () => {
-    this.setState((prev) => ({
-      context: {
-        ...prev.context,
-        user: {
-          email: '',
-          password: '',
-          isLoggedIn: false,
-        },
-        logOut: prev.context.logOut || this.logOut,
-      },
-    }));
-  };
-
-  markNotificationAsRead = (id) => {
+  markNotificationAsRead(id) {
     console.log(`Notification ${id} has been marked as read`);
-    this.setState((prev) => ({
-      notifications: prev.notifications.filter((n) => n.id !== id),
-    }));
-  };
+
+    this.setState((prevState) => {
+      const filtered = prevState.notifications.filter(item => item.id !== id);
+      return { notifications: filtered };
+    });
+  }
 
   render() {
-    const { displayDrawer, context, notifications } = this.state;
-    const isLoggedIn = context.user.isLoggedIn;
+    const { user, contextValue } = this.state;
 
     return (
-      <newContext.Provider value={context}>
-        <div className="relative px-3 min-h-screen flex flex-col">
-          <div className="absolute top-0 right-0 z-10">
-            <Notifications
-              notifications={notifications}
-              displayDrawer={displayDrawer}
-              handleDisplayDrawer={this.handleDisplayDrawer}
-              handleHideDrawer={this.handleHideDrawer}
-              markNotificationAsRead={this.markNotificationAsRead}
-            />
-          </div>
-          <div className="flex-1">
-            <Header />
-            {!isLoggedIn ? (
-              <BodySectionWithMarginBottom title="Log in to continue">
-                <Login
-                  logIn={this.logIn}
-                  email={context.user.email}
-                  password={context.user.password}
-                />
+      <newContext.Provider value={contextValue}>
+        <div className={css(styles.app)}>
+          <Notifications
+            notifications={this.state.notifications}
+            displayDrawer={this.state.displayDrawer}
+            handleDisplayDrawer={this.handleDisplayDrawer}
+            handleHideDrawer={this.handleHideDrawer}
+            markNotificationAsRead={this.markNotificationAsRead}
+          />
+
+          <Header />
+
+          <div className={css(styles.body)}>
+            {user.isLoggedIn ? (
+              <BodySectionWithMarginBottom title="Course list">
+                <CourseListWithLogging courses={this.state.courses} />
               </BodySectionWithMarginBottom>
             ) : (
-              <BodySectionWithMarginBottom title="Course list">
-                <CourseList courses={this.state.courses} />
+              <BodySectionWithMarginBottom title="Log in to continue">
+                <LoginWithLogging
+                  logIn={this.logIn}
+                  email={user.email}
+                  password={user.password}
+                />
               </BodySectionWithMarginBottom>
             )}
+
             <BodySection title="News from the School">
-              <p>Holberton School news goes here</p>
+              <p>Holberton School News goes here</p>
             </BodySection>
           </div>
-          <Footer />
+
+          <div className={css(styles.footer)}>
+            <Footer />
+          </div>
         </div>
       </newContext.Provider>
     );
   }
 }
+
+export default App;

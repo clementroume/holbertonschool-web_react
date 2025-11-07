@@ -1,109 +1,181 @@
-import React from 'react';
-import closeIcon from '../assets/close-icon.png';
+import React, { memo } from 'react';
+import { StyleSheet, css } from 'aphrodite';
 import NotificationItem from './NotificationItem';
+import closeButton from "../assets/close-button.png";
 
-function Notifications(props) {
-  const {
-    notifications = [],
-    displayDrawer = true,
-    handleDisplayDrawer,
-    handleHideDrawer,
-    markNotificationAsRead,
-  } = props;
+const Notifications = memo(({
+  notifications = [],
+  displayDrawer = false,
+  handleDisplayDrawer = () => {},
+  handleHideDrawer = () => {},
+  markNotificationAsRead = () => {}
+}) => {
+  const opacityAnimation = {
+    '0%': { opacity: 0.5 },
+    '100%': { opacity: 1 }
+  };
 
-  return (
-    <>
-      <div
-        className={`notification-title absolute right-3 top-1 whitespace-nowrap ${
-          notifications.length > 0 && displayDrawer === false
-            ? 'animate-bounce'
-            : ''
-        }`}
-        onClick={handleDisplayDrawer}
-      >
-        Your notifications
+  const bounceAnimation = {
+    '0%': { transform: 'translateY(0px)' },
+    '33%': { transform: 'translateY(-5px)' },
+    '66%': { transform: 'translateY(5px)' },
+    '100%': { transform: 'translateY(0px)' }
+  };
+
+  const styles = StyleSheet.create({
+    notificationContainer: {
+      width: '100%',
+      padding: '1rem',
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'flex-end',
+      alignItems: 'flex-end'
+    },
+    notificationsTitle: {
+      marginBottom: '0.5rem',
+      position: 'relative',
+      float: 'right',
+      backgroundColor: '#fff8f8',
+      cursor: 'pointer',
+      padding: '10px',
+      ':hover': {
+        animationName: [opacityAnimation, bounceAnimation],
+        animationDuration: '1s, 0.5s',
+        animationIterationCount: '3, 3'
+      }
+    },
+    notificationsTitleHidden: {
+      display: 'none'
+    },
+    notifications: {
+      width: '500px',
+      position: 'relative',
+      padding: '0.5rem',
+      border: '1px dashed red',
+      '@media (max-width: 900px)': {
+        width: '100vw',
+        height: '100vh',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        padding: 0,
+        border: 'none',
+        fontSize: '20px',
+        backgroundColor: 'white',
+        zIndex: 1000
+      }
+    },
+    notificationsP: {
+      marginBottom: '1rem'
+    },
+    notificationsUl: {
+      marginLeft: '2rem',
+      '@media (max-width: 900px)': {
+        margin: 0,
+        padding: 0,
+        listStyle: 'none'
+      }
+    },
+    closeButton: {
+      position: 'absolute',
+      top: '0.60rem',
+      right: '1rem',
+      background: 'transparent',
+      border: 'none',
+      cursor: 'pointer'
+    },
+    closeButtonImg: {
+      width: '15px',
+      height: '15px'
+    }
+  });
+
+  let drawerContent = null;
+
+  if (displayDrawer) {
+    let content = "No new notification for now";
+
+    if (notifications.length > 0) {
+      const items = [];
+
+      for (let i = 0; i < notifications.length; i += 1) {
+        const notification = notifications[i];
+        const itemProps = {
+          id: notification.id,
+          type: notification.type,
+          markAsRead: markNotificationAsRead
+        };
+
+        if (notification.html) {
+          items.push(
+            <NotificationItem
+              key={notification.id}
+              {...itemProps}
+              html={notification.html}
+            />
+          );
+        } else {
+          items.push(
+            <NotificationItem
+              key={notification.id}
+              {...itemProps}
+              value={notification.value}
+            />
+          );
+        }
+      }
+
+      content = (
+        <>
+          <p className={css(styles.notificationsP)}>Here is the list of notifications</p>
+          <ul className={css(styles.notificationsUl)}>{items}</ul>
+        </>
+      );
+    }
+
+    drawerContent = (
+      <div className={css(styles.notifications)}>
+        <button
+          className={css(styles.closeButton)}
+          aria-label="Close"
+          onClick={handleHideDrawer}
+        >
+          <img
+            src={closeButton}
+            alt="close"
+            className={css(styles.closeButtonImg)}
+          />
+        </button>
+        {content}
       </div>
-      {displayDrawer ? (
-        <div className="notification-items relative border-[3px] border-dotted border-[color:var(--main-color)] right-3 p-1.5 w-[380px] float-right mt-7 max-[912px]:w-full max-[912px]:fixed max-[912px]:top-0 max-[912px]:left-0 max-[912px]:right-0 max-[912px]:bottom-0 max-[912px]:z-50 max-[912px]:float-none max-[912px]:m-0 max-[912px]:p-3 max-[912px]:bg-white max-[912px]:overflow-y-hidden max-[912px]:h-screen max-[430px]:overflow-y-hidden max-[430px]:h-screen">
-          {notifications.length > 0 ? (
-            <div className="relative">
-              <p className="m-0 max-[912px]:text-[20px]">
-                Here is the list of notifications
-              </p>
-              <button
-                onClick={handleHideDrawer}
-                aria-label="Close"
-                className="absolute cursor-pointer right-0 top-0 bg-transparent"
-              >
-                <img src={closeIcon} alt="close icon" className="w-3 h-3" />
-              </button>
-              <ul className="list-[square] pl-5 max-[912px]:p-0 max-[912px]:list-none">
-                {notifications.map((notification) => (
-                  <NotificationItem
-                    id={notification.id}
-                    key={notification.id}
-                    type={notification.type}
-                    value={notification.value}
-                    html={notification.html}
-                    markAsRead={markNotificationAsRead}
-                  />
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <p className="max-[912px]:text-[20px]">
-              No new notification for now
-            </p>
-          )}
-        </div>
-      ) : (
-        []
-      )}
-    </>
-  );
-}
-
-/**
- * Custom comparison for memo:
- * Return true if props are equal (so React.memo will skip re-render).
- * Return false if they differ (so component will re-render).
- *
- * We mirror a shallow comparison that is appropriate for the original PureComponent behavior:
- * - Compare displayDrawer (primitive)
- * - Compare notifications array shallowly (length + each item's shallow fields)
- * - Other props (handlers) are compared by reference equality
- */
-function areEqual(prevProps, nextProps) {
-  // compare displayDrawer
-  if (prevProps.displayDrawer !== nextProps.displayDrawer) return false;
-
-  // compare notifications arrays (shallow)
-  const prevNotifs = prevProps.notifications || [];
-  const nextNotifs = nextProps.notifications || [];
-  if (prevNotifs.length !== nextNotifs.length) return false;
-
-  for (let i = 0; i < prevNotifs.length; i += 1) {
-    const a = prevNotifs[i];
-    const b = nextNotifs[i];
-    // compare commonly expected shallow fields: id, type, value, html
-    if (a.id !== b.id) return false;
-    if (a.type !== b.type) return false;
-    if (a.value !== b.value) return false;
-
-    const aHtml = a.html && typeof a.html === 'object' ? a.html.__html : a.html;
-    const bHtml = b.html && typeof b.html === 'object' ? b.html.__html : b.html;
-    if (aHtml !== bHtml) return false;
+    );
   }
 
-  // handlers: compare by reference (PureComponent would also shallow compare these)
-  if (prevProps.handleDisplayDrawer !== nextProps.handleDisplayDrawer)
-    return false;
-  if (prevProps.handleHideDrawer !== nextProps.handleHideDrawer) return false;
-  if (prevProps.markNotificationAsRead !== nextProps.markNotificationAsRead)
-    return false;
+  const titleClass = [];
 
-  // if everything above is equal, return true to skip re-render
-  return true;
-}
+  if (displayDrawer) {
+    titleClass.push(styles.notificationsTitle);
+    titleClass.push(styles.notificationsTitleHidden);
+  } else {
+    titleClass.push(styles.notificationsTitle);
+  }
 
-export default React.memo(Notifications, areEqual);
+  return (
+    <div className="root-notifications">
+      <div className={css(styles.notificationContainer)}>
+        <div
+          className={css(...titleClass)}
+          onClick={handleDisplayDrawer}
+        >
+          Your notifications
+        </div>
+        {drawerContent}
+      </div>
+    </div>
+  );
+});
+
+export default Notifications;

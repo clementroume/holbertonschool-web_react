@@ -1,48 +1,66 @@
-import React from 'react';
+import React, { memo, useRef } from 'react';
+import { StyleSheet, css } from 'aphrodite';
 
-function NotificationItem({ type, html, value, markAsRead, id }) {
-  // used by tests to detect renders and to keep parity with previous implementation
-  // (PureComponent render spy). Do not remove unless tests are updated.
-  // eslint-disable-next-line no-console
-  console.log('Rendering NotificationItem');
+const styles = StyleSheet.create({
+  default: {
+    color: 'blue',
+    cursor: 'pointer',
+  },
+  urgent: {
+    color: 'red',
+    cursor: 'pointer',
+  }
+});
 
-  const baseClassName =
-    'text-[color:var(--urgent-notification-item)] pl-1 max-[912px]:text-[20px] max-[912px]:w-full max-[912px]:border-b max-[912px]:border-black max-[912px]:p-[10px_8px]';
+const NotificationItem = memo(({ type = 'default', html, value, id, markAsRead }) => {
+  const liRef = useRef();
 
-  if (type === 'default') {
+  const handleClick = () => {
+    if (markAsRead) {
+      markAsRead(id);
+    }
+  };
+
+  const containsHTML = (str) => {
+    return typeof str === 'string' && /<\/?[a-z][\s\S]*>/i.test(str);
+  };
+
+  const styleClass = type === 'urgent' ? styles.urgent : styles.default;
+
+  if (html) {
     return (
       <li
-        className="text-[color:var(--default-notification-item)] pl-1 max-[912px]:text-[20px] max-[912px]:w-full max-[912px]:border-b max-[912px]:border-black max-[912px]:p-[10px_8px]"
-        data-notification-type={type}
-        onClick={() => markAsRead(id)}
-        role="listitem"
-      >
-        {value}
-      </li>
-    );
-  } else if (type === 'urgent' && html !== undefined) {
-    return (
-      <li
-        className={baseClassName}
+        ref={liRef}
+        className={css(styleClass)}
         data-notification-type={type}
         dangerouslySetInnerHTML={html}
-        onClick={() => markAsRead(id)}
-        role="listitem"
+        onClick={handleClick}
       />
     );
-  } else {
+  }
+
+  if (value && containsHTML(value)) {
     return (
       <li
-        className={baseClassName}
+        ref={liRef}
+        className={css(styleClass)}
         data-notification-type={type}
-        onClick={() => markAsRead(id)}
-        role="listitem"
-      >
-        {value}
-      </li>
+        dangerouslySetInnerHTML={{ __html: value }}
+        onClick={handleClick}
+      />
     );
   }
-}
 
-// React.memo performs a shallow prop comparison which mirrors the PureComponent behavior
-export default React.memo(NotificationItem);
+  return (
+    <li
+      ref={liRef}
+      className={css(styleClass)}
+      data-notification-type={type}
+      onClick={handleClick}
+    >
+      {value}
+    </li>
+  );
+});
+
+export default NotificationItem;
