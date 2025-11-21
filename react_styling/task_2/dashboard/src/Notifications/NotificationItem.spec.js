@@ -2,12 +2,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import NotificationItem from './NotificationItem';
 import { getLatestNotification } from '../utils/utils';
 
-
 test('it should display the correct notification with a red color, and set the "data-notification-type" to urgent whenever it receives the type "urgent" props', () => {
   const props = {
     type: 'urgent',
-    html: {__html: getLatestNotification()},
-  }
+    html: { __html: getLatestNotification() },
+  };
 
   render(<NotificationItem {...props} />);
 
@@ -20,7 +19,7 @@ test('it should display the correct notification with a blue color, and set the 
   const props = {
     type: 'default',
     html: undefined,
-  }
+  };
 
   render(<NotificationItem {...props} />);
 
@@ -49,7 +48,9 @@ test('it should call markAsRead with the correct id when the notification item i
 });
 
 describe('NotificationItem - Pure Component behavior', () => {
-  const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+  const mockConsoleLog = jest
+    .spyOn(console, 'log')
+    .mockImplementation(() => {});
   let markAsRead;
 
   beforeEach(() => {
