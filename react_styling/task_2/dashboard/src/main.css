@@ -1,8 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-:root {
+@theme {
   --main-color: #e1003c;
   --default-notification-item: blue;
   --urgent-notification-item: red;

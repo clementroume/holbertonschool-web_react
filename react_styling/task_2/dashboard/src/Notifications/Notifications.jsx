@@ -27,7 +27,7 @@ export default class Notifications extends React.Component {
           Your notifications
         </div>
         {displayDrawer ? (
-          <div className="notification-items relative border-[3px] border-dashed border-[color:var(--main-color)] p-1.5 w-1/4 float-right mt-7">
+          <div className="notification-items relative border-[3px] border-dotted border-[color:var(--main-color)] p-1.5 w-1/4 float-right mt-7">
             {notifications.length > 0 ? (
               <div className="relative">
                 <p className="m-0">Here is the list of notifications</p>
