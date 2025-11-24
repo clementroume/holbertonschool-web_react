@@ -1,10 +1,15 @@
 // External libraries.
 import { StyleSheet, css } from 'aphrodite';
+import { useSelector } from 'react-redux';
 
 // Components.
 import CourseListRow from './CourseListRow/CourseListRow';
+// Note: Assurez-vous que le chemin vers WithLogging est correct selon votre structure de dossier
+import WithLogging from '../../components/HOC/WithLogging';
 
-function CourseList({ courses = [] }) {
+function CourseList() {
+  // Accessing the courses state from the Redux store
+  const courses = useSelector((state) => state.courses);
 
   // Styles.
   const styles = StyleSheet.create({
@@ -36,9 +41,9 @@ function CourseList({ courses = [] }) {
     },
   });
 
-
   //Render empty state.
-  if (courses.length === 0) {
+  // Check if courses is undefined, null or empty array
+  if (!courses || courses.length === 0) {
     return (
       <div className={css(styles.CourseListContainer)}>
         <table className={css(styles.CourseList)}>
@@ -76,4 +81,5 @@ function CourseList({ courses = [] }) {
   );
 }
 
-export default CourseList;
+// Wrapping the component with the HOC as requested
+export default WithLogging(CourseList);
