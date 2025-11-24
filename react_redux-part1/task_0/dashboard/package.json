@@ -11,7 +11,7 @@
     "test": "jest --detectOpenHandles --maxWorkers=1 --testTimeout=10000"
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^2.9.0",
+    "@reduxjs/toolkit": "^2.11.0",
     "aphrodite": "^2.4.0",
     "axios": "^1.12.2",
     "react": "^19.1.0",
