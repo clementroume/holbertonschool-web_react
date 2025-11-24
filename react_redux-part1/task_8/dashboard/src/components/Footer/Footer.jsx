@@ -1,22 +1,22 @@
-import React from 'react';
+// External libraries.
 import { useSelector } from 'react-redux';
-import { getFullYear, getFooterCopy } from '../../utils/utils';
-import './Footer.css';
+
+// Components.
+import { getCurrentYear, getFooterCopy } from '../../utils/utils';
 
 function Footer() {
-  const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
+  const { user, isLoggedIn } = useSelector((state) => state.auth);
 
   return (
-    <div className="App-footer">
-      <p>
-        Copyright {getFullYear()} - {getFooterCopy(true)}
-      </p>
+    <footer className='App-footer' style={{ textAlign: 'center' }}>
       {isLoggedIn && (
-        <p>
-          <a href="#">Contact us</a>
-        </p>
+        <a href="#" aria-label="Contact us link">
+          Contact us
+        </a>
       )}
-    </div>
+
+      <p style={{ marginTop: '0.5rem' }}>Copyright {getCurrentYear()} - {getFooterCopy(true)}</p>
+    </footer>
   );
 }
 

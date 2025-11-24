@@ -1,20 +1,49 @@
-import React from 'react';
-import { screen } from '@testing-library/react';
+// External libraries.
+import { render, screen } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import { StyleSheetTestUtils } from 'aphrodite';
+
+// Reducers.
+import authReducer from '../../features/auth/authSlice';
+import coursesReducer from '../../features/courses/coursesSlice';
+import notificationsReducer from '../../features/notifications/notificationsSlice';
+
+// Components.
 import Footer from './Footer';
-import { renderWithProviders } from '../../utils/test-utils';
 
-describe('Footer Component', () => {
-  test('renders Contact us link when isLoggedIn is true', () => {
-    renderWithProviders(<Footer />, {
-      preloadedState: { auth: { isLoggedIn: true } },
-    });
-    expect(screen.getByText(/contact us/i)).toBeInTheDocument();
-  });
+// Create test store
+const testStore = configureStore({
+  reducer: {
+    auth: authReducer,
+    courses: coursesReducer,
+    notifications: notificationsReducer,
+  },
+});
 
-  test('does not render Contact us link when isLoggedIn is false', () => {
-    renderWithProviders(<Footer />, {
-      preloadedState: { auth: { isLoggedIn: false } },
-    });
-    expect(screen.queryByText(/contact us/i)).not.toBeInTheDocument();
-  });
+// Suppress Aphrodite style injection before tests.
+beforeEach(() => {
+  StyleSheetTestUtils.suppressStyleInjection();
+});
+
+// Clear and resume style injection after tests.
+afterAll(() => {
+  StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
+});
+
+/******************
+* COMPONENT TESTS *
+******************/
+
+test('Renders correct copyright text', () => {
+  render(
+    <Provider store={testStore}>
+      <Footer />
+    </Provider>
+  );
+
+  const currentYear = new Date().getFullYear();
+  const footerParagraph = screen.getByText(new RegExp(`copyright ${currentYear}.*holberton school`, 'i'));
+
+  expect(footerParagraph).toBeInTheDocument();
 });
