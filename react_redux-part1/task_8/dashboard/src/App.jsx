@@ -1,14 +1,13 @@
+// src/App.jsx
 // External libraries.
 import React, { useEffect, useCallback } from 'react';
-import axios from 'axios';
 import { StyleSheet, css } from 'aphrodite';
 import { useSelector, useDispatch } from 'react-redux';
 
-// Utilities.
-import { getLatestNotification } from './utils/utils';
-
-// Redux actions
-import { login, logout } from './features/auth/authSlice';
+// Redux actions / thunks
+import { logout } from './features/auth/authSlice';
+import { fetchNotifications } from './features/notifications/notificationsSlice';
+import { fetchCourses } from './features/courses/coursesSlice';
 
 // Components.
 import BodySection from './components/BodySection/BodySection';
@@ -29,11 +28,11 @@ const styles = StyleSheet.create({
   appContainer: {
     minHeight: '100vh',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
   },
   mainBody: {
     flex: 1,
-    padding: '1rem'
+    padding: '1rem',
   },
   footerContainer: {
     padding: '1rem',
@@ -44,81 +43,43 @@ const styles = StyleSheet.create({
     fontSize: '0.8rem',
     fontWeight: 200,
     fontStyle: 'italic',
-    borderTop: '0.25rem solid #e1003c'
+    borderTop: '0.25rem solid #e1003c',
   },
 });
 
 function App() {
-  // Redux state et dispatch
-  const { user, isLoggedIn } = useSelector((state) => state.auth);
-  const notifications = useSelector((state) => state.notifications || []);
-  const courses = [];
-  const displayDrawer = useSelector((state) => state.displayDrawer || false);
   const dispatch = useDispatch();
 
-  // User authentication - utilise Redux maintenant
-  const handleLogin = useCallback((email, password) => {
-    dispatch(login({ email, password }));
+  // Use isLoggedIn from Redux auth slice as single source of truth
+  const isLoggedIn = useSelector((state) => state.auth?.isLoggedIn);
+
+  // Keyboard shortcut (Ctrl + h) to logout
+  const handleCtrlHKey = useCallback(
+    (event) => {
+      if (event.ctrlKey && event.key === 'h') {
+        // Keep alert for compatibility with tests / expected behavior
+        // (if tests expect no alert, remove it)
+        // eslint-disable-next-line no-alert
+        alert('Logging you out');
+        dispatch(logout());
+      }
+    },
+    [dispatch]
+  );
+
+  // Fetch notifications once on mount (dispatch thunk)
+  useEffect(() => {
+    dispatch(fetchNotifications());
   }, [dispatch]);
 
-  const handleLogout = useCallback(() => {
-    dispatch(logout());
-  }, [dispatch]);
-
-  // Note: Vous devrez créer des actions Redux pour ces fonctions aussi
-  // Pour l'instant, je les laisse comme des fonctions locales
-  const toggleNotificationsDrawer = useCallback(() => {
-    // dispatch({ type: 'TOGGLE_DRAWER' }); // À implémenter dans un slice séparé
-  }, []);
-
-  const markNotificationReadById = useCallback((id) => {
-    // dispatch(markNotificationRead(id)); // À implémenter dans un slice séparé
-  }, []);
-
-  // Keyboard shortcut (Ctrl + h).
-  const handleCtrlHKey = useCallback((event) => {
-    if (event.ctrlKey && event.key === 'h') {
-      alert('Logging you out');
-      handleLogout();
+  // Fetch courses only when user is logged in
+  useEffect(() => {
+    if (isLoggedIn) {
+      dispatch(fetchCourses());
     }
-  }, [handleLogout]);
+  }, [dispatch, isLoggedIn]);
 
-  // Fetch notifications.
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const res = await axios.get('http://localhost:3000/notifications.json');
-        const notificationsList = (res.data.notifications || res.data).map((notif) => {
-          if ((!notif.value && !notif.html) || notif.id === 3) {
-            return { ...notif, html: { __html: getLatestNotification() } };
-          }
-          return notif;
-        });
-        // dispatch(setNotifications(notificationsList)); // À implémenter
-      } catch (err) {
-        console.error('Error fetching notifications:', err);
-      }
-    };
-
-    fetchNotifications();
-  }, []);
-
-  // Fetch courses if logged in.
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const res = await axios.get('http://localhost:3000/courses.json');
-        const coursesList = res.data.courses || res.data;
-        // dispatch(setCourses(coursesList)); // À implémenter
-      } catch (err) {
-        console.error('Error fetching courses:', err);
-      }
-    };
-
-    if (isLoggedIn) fetchCourses(); // Utilise isLoggedIn de Redux
-  }, [isLoggedIn]);
-
-  // Keyboard event listener.
+  // Keyboard listener
   useEffect(() => {
     document.addEventListener('keydown', handleCtrlHKey);
     return () => document.removeEventListener('keydown', handleCtrlHKey);
@@ -126,24 +87,22 @@ function App() {
 
   return (
     <div className={css(styles.appContainer)}>
-      <Notifications
-        notifications={notifications}
-        displayDrawer={displayDrawer}
-        handleDisplayDrawer={toggleNotificationsDrawer}
-        handleHideDrawer={toggleNotificationsDrawer}
-        markNotificationAsRead={markNotificationReadById}
-      />
+      {/* Notifications no longer receives notifications/displayDrawer/handlers via props.
+          The Notifications component should itself read from Redux (notifications + displayDrawer) and dispatch actions. */}
+      <Notifications />
 
       <Header />
 
       <div className={css(styles.mainBody)}>
         {isLoggedIn ? (
           <BodySectionWithMarginBottom title="Course list">
-            <CourseListWithLoggingHOC courses={courses} />
+            {/* CourseList reads its data (courses) from Redux */}
+            <CourseListWithLoggingHOC />
           </BodySectionWithMarginBottom>
         ) : (
           <BodySectionWithMarginBottom title="Log in to continue">
-            <LoginWithLoggingHOC logIn={handleLogin} email={user.email} password={user.password} />
+            {/* Login should dispatch login action internally; no props passed from App */}
+            <LoginWithLoggingHOC />
           </BodySectionWithMarginBottom>
         )}
 
