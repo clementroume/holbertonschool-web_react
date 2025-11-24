@@ -14,34 +14,35 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column',
     borderBottom: '0.25rem solid #e1003c',
-    paddingBottom: '1rem'
+    paddingBottom: '1rem',
   },
   headerRow: {
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: '1rem'
+    gap: '1rem',
   },
   AppHeaderH1: {
-    fontFamily: "'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
+    fontFamily:
+      "'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
     fontWeight: 600,
     letterSpacing: '0.025rem',
-    color: '#e1003c'
+    color: '#e1003c',
   },
   AppLogo: {
-    height: '15rem'
+    height: '15rem',
   },
   logoutSection: {
-    marginTop: '0.75rem'
+    marginTop: '0.75rem',
   },
   logoutLink: {
-    cursor: 'pointer'
+    cursor: 'pointer',
   },
   TitleContainer: {
     height: '5rem',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'start'
+    justifyContent: 'start',
   },
 });
 
@@ -62,14 +63,26 @@ function Header() {
   return (
     <header className={css(styles.AppHeader)}>
       <div className={css(styles.headerRow)}>
-        <img className={css(styles.AppLogo)} src={holbertonLogo} alt="holberton logo" />
+        <img
+          className={css(styles.AppLogo)}
+          src={holbertonLogo}
+          alt="holberton logo"
+        />
 
         <div className={css(styles.TitleContainer)}>
           <h1 className={css(styles.AppHeaderH1)}>School Dashboard</h1>
 
           {isLoggedIn && (
             <div id="logoutSection" className={css(styles.logoutSection)}>
-              Welcome <b>{user.email}</b> (<a href="#" className={css(styles.logoutLink)} onClick={handleLogout}>logout</a>)
+              Welcome <b>{user.email}</b> (
+              <a
+                href="#"
+                className={css(styles.logoutLink)}
+                onClick={handleLogout}
+              >
+                logout
+              </a>
+              )
             </div>
           )}
         </div>
