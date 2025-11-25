@@ -1,11 +1,15 @@
-import { useDispatch } from 'react-redux';
-import WithLogging from '../../components/HOC/WithLogging';
-import useLogin from '../../hooks/useLogin';
-import './Login.css';
-import { login } from '../../features/auth/authSlice';
+// External libraries.
+import React, { useRef } from 'react';
+import { StyleSheet, css } from 'aphrodite';
 
-function Login() {
-  const dispatch = useDispatch();
+// Custom hooks.
+import useLogin from '../../hooks/useLogin';
+
+const Login = (props) => {
+  // Extract login function from props with fallback.
+  const loginFunction = props.login || props.logIn || (() => {});
+
+  // Use custom login hook for form state management.
   const {
     email,
     password,
@@ -13,9 +17,11 @@ function Login() {
     handleChangeEmail,
     handleChangePassword,
     handleLoginSubmit,
-  } = useLogin({
-    onLogin: (email, password) => dispatch(login({ email, password })),
-  });
+  } = useLogin({ onLogin: loginFunction });
+
+  // Refs for input focus management.
+  const emailRef = useRef();
+  const passwordRef = useRef();
 
   // Component styles with responsive design.
   const styles = StyleSheet.create({
@@ -50,31 +56,57 @@ function Login() {
   });
 
   return (
-    <form aria-label="form" onSubmit={handleLoginSubmit}>
-      <div className="App-body">
-        <p>Login to access the full dashboard</p>
-        <div className="form">
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            name="email"
-            id="email"
-            value={email}
-            onChange={handleChangeEmail}
-          />
-          <label htmlFor="password">Password</label>
-          <input
-            type="password"
-            name="password"
-            id="password"
-            value={password}
-            onChange={handleChangePassword}
-          />
-          <input type="submit" value="OK" disabled={!enableSubmit} />
-        </div>
-      </div>
-    </form>
-  );
-}
+    <div className={css(styles.AppBody)}>
+      <p className={css(styles.AppBodyP)}>Login to access the full dashboard</p>
 
-export default WithLogging(Login);
+      <form
+        role="form"
+        aria-label="login form"
+        className={css(styles.form)}
+        onSubmit={handleLoginSubmit}
+      >
+        <label
+          htmlFor="email"
+          onClick={() => emailRef.current && emailRef.current.focus()}
+        >
+          Email
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          ref={emailRef}
+          className={css(styles.formInput)}
+          value={email}
+          onChange={handleChangeEmail}
+        />
+
+        <label
+          htmlFor="password"
+          onClick={() => passwordRef.current && passwordRef.current.focus()}
+        >
+          Password
+        </label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          role="textbox"
+          ref={passwordRef}
+          className={css(styles.formInput)}
+          value={password}
+          onChange={handleChangePassword}
+        />
+
+        <input
+          type="submit"
+          value="OK"
+          className={css(styles.formButton)}
+          disabled={!enableSubmit}
+        />
+      </form>
+    </div>
+  );
+};
+
+export default Login;
