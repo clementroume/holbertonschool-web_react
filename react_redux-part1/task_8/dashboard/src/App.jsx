@@ -1,108 +1,82 @@
-import React, { useEffect, useCallback } from 'react';
-import { StyleSheet, css } from 'aphrodite';
+import { useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-
-// Actions
-import { logout } from './features/auth/authSlice';
-import { fetchNotifications } from './features/notifications/notificationsSlice';
+import { login, logout } from './features/auth/authSlice';
 import { fetchCourses } from './features/courses/coursesSlice';
-
-// Components
-import BodySection from './components/BodySection/BodySection';
-import BodySectionWithMarginBottom from './components/BodySectionWithMarginBottom/BodySectionWithMarginBottom';
-import CourseList from './pages/CourseList/CourseList';
+import Notifications from './components/Notifications/Notifications';
 import Footer from './components/Footer/Footer';
 import Header from './components/Header/Header';
 import Login from './pages/Login/Login';
-import Notifications from './components/Notifications/Notifications';
-import WithLogging from './components/HOC/WithLogging';
+import CourseList from './pages/CourseList/CourseList';
+import BodySectionWithMarginBottom from './components/BodySectionWithMarginBottom/BodySectionWithMarginBottom';
+import BodySection from './components/BodySection/BodySection';
+import {
+    fetchNotifications,
+    markNotificationAsRead,
+    hideDrawer,
+    showDrawer,
+} from './features/notifications/notificationsSlice';
 
-// HOC
-const LoginWithLoggingHOC = WithLogging(Login);
-const CourseListWithLoggingHOC = WithLogging(CourseList);
+export default function App() {
+    const dispatch = useDispatch();
+    const user = useSelector((state) => state.auth.user);
+    const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
+    const courses = useSelector((state) => state.courses.courses);
+    const notifications = useSelector((state) => state.notifications.notifications);
+    const displayDrawer = useSelector((state) => state.notifications.displayDrawer);
 
-const styles = StyleSheet.create({
-  appContainer: {
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    fontFamily: 'Arial, Helvetica, sans-serif',
-  },
-  mainBody: {
-    flex: 1,
-    padding: '1rem',
-  },
-  footerContainer: {
-    padding: '1rem',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontSize: '0.8rem',
-    fontWeight: 200,
-    fontStyle: 'italic',
-    borderTop: '0.25rem solid #e1003c',
-  },
-});
+    useEffect(() => {
+        dispatch(fetchNotifications());
+    }, [dispatch]);
 
-function App() {
-  // Le test vérifie state.auth.isLoggedIn
-  const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
-  const dispatch = useDispatch();
+    useEffect(() => {
+        if (isLoggedIn) {
+            dispatch(fetchCourses());
+        }
+    }, [isLoggedIn, dispatch]);
 
-  // 1. Fetch Notifications au montage (requis par le test "should NOT populate courses...")
-  useEffect(() => {
-    dispatch(fetchNotifications());
-  }, [dispatch]);
+    const handleDisplayDrawer = useCallback(() => {
+        dispatch(showDrawer());
+    }, [dispatch]);
 
-  // 2. Fetch Courses UNIQUEMENT si loggé (requis par le test "should populate courses WHEN logged in")
-  useEffect(() => {
-    if (isLoggedIn) {
-      dispatch(fetchCourses());
-    }
-  }, [isLoggedIn, dispatch]);
+    const handleHideDrawer = useCallback(() => {
+        dispatch(hideDrawer());
+    }, [dispatch]);
 
-  const handleCtrlHKey = useCallback(
-    (event) => {
-      if (event.ctrlKey && event.key === 'h') {
-        event.preventDefault();
-        alert('Logging you out');
-        dispatch(logout());
-      }
-    },
-    [dispatch]
-  );
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleCtrlHKey);
-    return () => {
-      document.removeEventListener('keydown', handleCtrlHKey);
+    const logIn = (email, password) => {
+        dispatch(login({ email, password }));
     };
-  }, [handleCtrlHKey]);
 
-  return (
-    <div className={css(styles.appContainer)}>
-      <Notifications />
-      <Header />
-      <div className={css(styles.mainBody)}>
-        {isLoggedIn ? (
-          <BodySectionWithMarginBottom title="Course list">
-            <CourseListWithLoggingHOC />
-          </BodySectionWithMarginBottom>
-        ) : (
-          <BodySectionWithMarginBottom title="Log in to continue">
-            <LoginWithLoggingHOC />
-          </BodySectionWithMarginBottom>
-        )}
-        <BodySection title="News from the School">
-          <p>Holberton School News goes here</p>
-        </BodySection>
-      </div>
-      <div className={css(styles.footerContainer)}>
-        <Footer />
-      </div>
-    </div>
-  );
+    const logOut = () => {
+        dispatch(logout());
+    };
+
+    return (
+        <>
+            <Notifications
+                notifications={notifications}
+                handleHideDrawer={handleHideDrawer}
+                handleDisplayDrawer={handleDisplayDrawer}
+                displayDrawer={displayDrawer}
+                markNotificationAsRead={
+                    (id) => dispatch(markNotificationAsRead(id))
+                }
+            />
+            <>
+                <Header user={user} logOut={logOut} />
+                {!isLoggedIn ? (
+                    <BodySectionWithMarginBottom title='Log in to continue'>
+                        <Login login={logIn} />
+                    </BodySectionWithMarginBottom>
+                ) : (
+                    <BodySectionWithMarginBottom title='Course list'>
+                        <CourseList courses={courses} />
+                    </BodySectionWithMarginBottom>
+                )}
+                <BodySection title="News from the School">
+                    <p>Holberton School news goes here</p>
+                </BodySection>
+            </>
+            <Footer user={user} />
+        </>
+    );
 }
-
-export default App;

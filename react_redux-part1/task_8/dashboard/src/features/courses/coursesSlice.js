@@ -1,39 +1,40 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { logout } from '../auth/authSlice';
+import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5173';
 
-const ENDPOINTS = {
-  courses: `${API_BASE_URL}/courses.json`,
+const initialState = {
+  courses: [],
 };
 
-// Async Thunk pour récupérer les cours
+const API_BASE_URL = 'http://localhost:5173';
+const ENDPOINTS = {
+    courses: `${API_BASE_URL}/courses.json`,
+};
+
 export const fetchCourses = createAsyncThunk(
   'courses/fetchCourses',
   async () => {
-    const response = await axios.get('/courses.json'); // Utiliser axios directement pour le mock
-    return response.data;
+    try {
+      const response = await axios.get(ENDPOINTS.courses);
+      return response.data.courses;
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      throw error;
+    }
   }
-);
+)
 
-const coursesSlice = createSlice({
+export const coursesSlice = createSlice({
   name: 'courses',
-  // ATTENTION: Le test attend { courses: [] }, pas juste []
-  initialState: {
-    courses: [],
-  },
-  reducers: {},
+  initialState,
   extraReducers: (builder) => {
-    builder
-      .addCase(fetchCourses.fulfilled, (state, action) => {
-        state.courses = action.payload;
-      })
-      // C'est ICI que le test "should CLEAR courses on logout" passe ou casse
-      .addCase(logout, (state) => {
-        state.courses = [];
-      });
-  },
-});
+      builder
+        .addCase(fetchCourses.fulfilled, (state, action) =>{
+          state.courses = action.payload;
+        })
+        .addCase(logout.type, () => initialState);
+    }
+})
 
 export default coursesSlice.reducer;
