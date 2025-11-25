@@ -1,39 +1,44 @@
-import { memo } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { markNotificationAsRead } from "../../features/notifications/notificationsSlice";
+// External libraries.
+import React, { memo, useRef } from 'react';
+import { StyleSheet, css } from 'aphrodite';
 
-const NotificationItem = memo(function NotificationItem({ id }) {
-  const dispatch = useDispatch();
-  const notification = useSelector((state) =>
-    state.notifications.notifications.find((notif) => notif.id === id)
-  );
-  if (!notification) return null;
+// Styles.
+const styles = StyleSheet.create({
+  default: {
+    color: 'blue',
+    cursor: 'pointer',
+  },
+  urgent: {
+    color: 'red',
+    cursor: 'pointer',
+  }
+});
 
-  const { type, value, html } = notification;
+const NotificationItem = memo(({ type = 'default', html, value, id, markAsRead }) => {
+  // Ref for the list item element.
+  const liRef = useRef();
 
+  // Handles notification item click and marks as read.
   const handleClick = () => {
-    dispatch(markNotificationAsRead(id));
+    if (markAsRead) {
+      markAsRead(id);
+    }
   };
 
-  console.log(
-    `Rendering NotificationItem with id: ${id}, type: ${type}, value: ${value}`
-  );
-  if (type === "default") {
-    return (
-      <li
-        style={{ color: "blue" }}
-        data-notification-type={type}
-        onClick={handleClick}
-      >
-        {value}
-      </li>
-    );
-  }
+  // Checks if a string contains HTML tags.
+  const containsHTML = (str) => {
+    return typeof str === 'string' && /<\/?[a-z][\s\S]*>/i.test(str);
+  };
 
-  if (type === "urgent" && html !== undefined) {
+  // Determine style class based on notification type.
+  const styleClass = type === 'urgent' ? styles.urgent : styles.default;
+
+  // Render with HTML prop (dangerouslySetInnerHTML object).
+  if (html) {
     return (
       <li
-        style={{ color: "red" }}
+        ref={liRef}
+        className={css(styleClass)}
         data-notification-type={type}
         dangerouslySetInnerHTML={html}
         onClick={handleClick}
@@ -41,9 +46,24 @@ const NotificationItem = memo(function NotificationItem({ id }) {
     );
   }
 
+  // Render with HTML string value.
+  if (value && containsHTML(value)) {
+    return (
+      <li
+        ref={liRef}
+        className={css(styleClass)}
+        data-notification-type={type}
+        dangerouslySetInnerHTML={{ __html: value }}
+        onClick={handleClick}
+      />
+    );
+  }
+
+  // Render with plain text value.
   return (
     <li
-      style={{ color: "red" }}
+      ref={liRef}
+      className={css(styleClass)}
       data-notification-type={type}
       onClick={handleClick}
     >

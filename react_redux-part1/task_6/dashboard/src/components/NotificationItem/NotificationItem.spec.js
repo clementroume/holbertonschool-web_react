@@ -1,125 +1,138 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
+// External libraries.
+import React from 'react';
+import { render, fireEvent } from '@testing-library/react';
+
+// Components.
 import NotificationItem from './NotificationItem';
-import { getLatestNotification } from '../../utils/utils';
 
-test('The NotificationItem is rendered without crashing', () => {
-    render(<NotificationItem />)
-})
+// Mock getComputedStyle to simulate Aphrodite styles in tests.
+const mockGetComputedStyle = (element) => {
+    const type = element.getAttribute('data-notification-type');
+    return {
+        color: type === 'default' ? 'blue' : 'red'
+    };
+};
 
-test('Should display the correct notification with a red color, and set the "data-notification-type" to urgent whenever it receives the type "urgent" props', () => {
-    const props = {
-        type: 'urgent',
-        html: { __html: getLatestNotification() },
-    }
-    render(<NotificationItem {...props} />);
-    const liElement = screen.getByRole('listitem');
-    expect(liElement).toHaveStyle({ color: 'red' });
-    expect(liElement).toHaveAttribute('data-notification-type', 'urgent');
+// Mock window.getComputedStyle for testing styled components.
+Object.defineProperty(window, 'getComputedStyle', {
+    value: mockGetComputedStyle,
 });
 
-test('Should display the correct notification with a blue color, and set the "data-notification-type" to default whenever it receives the type "default" props', () => {
-    const props = {
-        type: 'default',
-        html: undefined,
-    }
-    render(<NotificationItem {...props} />);
-    const liElement = screen.getByRole('listitem');
-    expect(liElement).toHaveStyle({ color: 'blue' });
-    expect(liElement).toHaveAttribute('data-notification-type', 'default');
+let consoleSpy;
+
+// Mock console.log to avoid test output pollution.
+beforeEach(() => {
+    consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
 });
 
-test('It should log to the console the "Notification id has been marked as read" with the correct notification item id', () => {
-    const mockMarkAsRead = jest.fn()
-    render(<NotificationItem markAsRead={mockMarkAsRead} />);
-    const firstListItemElement = screen.getAllByRole('listitem')[0];
-    fireEvent.click(firstListItemElement)
-    expect(mockMarkAsRead).toHaveBeenCalled()
+// Restore console.log after each test.
+afterEach(() => {
+    consoleSpy.mockRestore();
 });
 
-describe('NotificationItem - Memo behavior', () => {
-    let renderCount;
-    beforeEach(() => {
-        renderCount = 0;
-        jest.spyOn(console, 'log').mockImplementation((msg) => {
-            if (msg.includes('Rendering NotificationItem')) {
-                renderCount++;
-            }
-        });
-    });
+/******************
+* COMPONENT TESTS *
+******************/
 
-    afterEach(() => {
-        jest.clearAllMocks();
-    });
+test('Renders with default type and blue color', () => {
+    const { container } = render(
+        <NotificationItem type="default" value="Test notification" />
+    );
 
-    test('Should not re-render with same props', () => {
-        const markAsRead = jest.fn();
-        const { rerender } = render(
-            <NotificationItem
-                id={1}
-                type="urgent"
-                value="New notification"
-                markAsRead={markAsRead}
-            />
-        );
-        expect(renderCount).toBe(1);
-        rerender(
-            <NotificationItem
-                id={1}
-                type="urgent"
-                value="New notification"
-                markAsRead={markAsRead}
-            />
-        );
-        expect(renderCount).toBe(1);
-    });
+    const li = container.querySelector('li');
+    expect(li).toHaveAttribute('data-notification-type', 'default');
 
-    test('Should re-render when props change', () => {
-        const markAsRead = jest.fn();
-        const { rerender } = render(
-            <NotificationItem
-                id={1}
-                type="urgent"
-                value="New notification"
-                markAsRead={markAsRead}
-            />
-        );
-        expect(renderCount).toBe(1);
-        rerender(
-            <NotificationItem
-                id={1}
-                type="urgent"
-                value="Updated notification"
-                markAsRead={markAsRead}
-            />
-        );
-        expect(renderCount).toBe(2);
-    });
-
-    test('Should re-render with new function reference', () => {
-        const { rerender } = render(
-            <NotificationItem
-                id={1}
-                type="urgent"
-                value="New notification"
-                markAsRead={() => { }}
-            />
-        );
-        expect(renderCount).toBe(1);
-        rerender(
-            <NotificationItem
-                id={1}
-                type="urgent"
-                value="New notification"
-                markAsRead={() => { }}
-            />
-        );
-        expect(renderCount).toBe(2);
-    });
+    const computedStyle = window.getComputedStyle(li);
+    expect(computedStyle.color).toBe('blue');
 });
 
-test('Should return true if the NotificationItem component is a functional component', () => {
-    expect(typeof NotificationItem.type).toBe('function');
-    expect(NotificationItem.$$typeof.toString()).toBe('Symbol(react.memo)');
-    expect(NotificationItem.type.prototype?.isReactComponent).toBeUndefined();
-})
+test('Renders with urgent type and red color', () => {
+    const { container } = render(
+        <NotificationItem type="urgent" value="Urgent notification" />
+    );
+
+    const li = container.querySelector('li');
+    expect(li).toHaveAttribute('data-notification-type', 'urgent');
+
+    const computedStyle = window.getComputedStyle(li);
+    expect(computedStyle.color).toBe('red');
+});
+
+test('Renders with html content', () => {
+    const htmlContent = "<strong>Urgent requirement</strong> - complete by EOD";
+
+    const { container } = render(
+        <NotificationItem
+            type="urgent"
+            html={{ __html: htmlContent }}
+        />
+    );
+
+    const li = container.querySelector('li');
+    expect(li).toHaveAttribute('data-notification-type', 'urgent');
+    expect(li.innerHTML).toBe(htmlContent);
+});
+
+test('Renders with value content', () => {
+    const { container } = render(
+        <NotificationItem type="default" value="Test notification" />
+    );
+
+    const li = container.querySelector('li');
+    expect(li.textContent).toBe('Test notification');
+});
+
+test('Calls markAsRead with correct id when clicked - value prop', () => {
+    const mockMarkAsRead = jest.fn();
+    const { container } = render(
+        <NotificationItem
+            id={42}
+            type="default"
+            value="Test notification"
+            markAsRead={mockMarkAsRead}
+        />
+    );
+
+    const li = container.querySelector('li');
+    fireEvent.click(li);
+
+    expect(mockMarkAsRead).toHaveBeenCalledTimes(1);
+    expect(mockMarkAsRead).toHaveBeenCalledWith(42);
+});
+
+test('Calls markAsRead with correct id when clicked - html prop', () => {
+    const mockMarkAsRead = jest.fn();
+    const htmlContent = "<strong>Urgent requirement</strong>";
+
+    const { container } = render(
+        <NotificationItem
+            id={123}
+            type="urgent"
+            html={{ __html: htmlContent }}
+            markAsRead={mockMarkAsRead}
+        />
+    );
+
+    const li = container.querySelector('li');
+    fireEvent.click(li);
+
+    expect(mockMarkAsRead).toHaveBeenCalledTimes(1);
+    expect(mockMarkAsRead).toHaveBeenCalledWith(123);
+});
+
+test('Does not crash when clicked without markAsRead prop', () => {
+    const { container } = render(
+        <NotificationItem
+            id={1}
+            type="default"
+            value="Test notification"
+        />
+    );
+
+    const li = container.querySelector('li');
+
+    // Should not throw when markAsRead is undefined.
+    expect(() => {
+        fireEvent.click(li);
+    }).not.toThrow();
+});

@@ -1,46 +1,45 @@
-import { render, screen } from '@testing-library/react';
-import CourseList from './CourseList';
-import { StyleSheetTestUtils } from "aphrodite";
+// External libraries.
+import { render } from '@testing-library/react';
+import { StyleSheetTestUtils } from 'aphrodite';
 
+// Components.
+import CourseList from './CourseList';
+
+// Suppress Aphrodite style injection before tests.
 beforeEach(() => {
   StyleSheetTestUtils.suppressStyleInjection();
 });
 
-afterEach(() => {
+// Clear and resume style injection after tests.
+afterAll(() => {
   StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
 });
 
-test('Should render the CourseList component without crashing', () => {
-    const props = {
-        courses: [
-            { id: 1, name: 'ES6', credit: 60 },
-            { id: 2, name: 'Webpack', credit: 20 },
-            { id: 3, name: 'React', credit: 40 }
-        ]
-    }
-    render(<CourseList {...props} />)
-});
+/******************
+* COMPONENT TESTS *
+******************/
 
-test('Should render the CourseList component with 5 rows', () => {
-    const props = {
-        courses: [
-            { id: 1, name: 'ES6', credit: 60 },
-            { id: 2, name: 'Webpack', credit: 20 },
-            { id: 3, name: 'React', credit: 40 }
-        ]
-    }
-    render(<CourseList {...props} />)
+describe('CourseList Component Tests', () => {
+  test('Renders correct number of rows with non-empty courses array', () => {
+    const courses = [
+      { id: 1, name: "ES6", credit: "60" },
+      { id: 2, name: "Webpack", credit: "20" },
+      { id: 3, name: "React", credit: "40" }
+    ];
 
-    const rowElements = screen.getAllByRole('row');
+    const { container } = render(<CourseList courses={courses} />);
+    const allRows = container.querySelectorAll('tr');
 
-    expect(rowElements).toHaveLength(5)
-});
+    // 2 header rows + 3 data rows = 5 rows.
+    expect(allRows).toHaveLength(5);
+  });
 
-test('Should render the CourseList component with 1 rows', () => {
-    const props = {
-        courses: []
-    }
-    render(<CourseList {...props} />)
-    const rowElements = screen.getAllByRole('row');
-    expect(rowElements).toHaveLength(1)
+  test('Renders 1 row and "No course available yet" message with empty courses array', () => {
+    const { container } = render(<CourseList courses={[]} />);
+    const allRows = container.querySelectorAll('tr');
+
+    // Only 1 row should be rendered for empty state.
+    expect(allRows).toHaveLength(1);
+    expect(container).toHaveTextContent('No course available yet');
+  });
 });
