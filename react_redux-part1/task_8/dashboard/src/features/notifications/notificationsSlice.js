@@ -1,35 +1,59 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-import { getLatestNotification } from '../../utils/utils';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
+import { getLatestNotification } from "../../utils/utils";
 
 const initialState = {
   notifications: [],
   displayDrawer: true,
 };
 
-const API_BASE_URL = 'http://localhost:5173';
+const API_BASE_URL = "http://localhost:5173";
 const ENDPOINTS = {
   notifications: `${API_BASE_URL}/notifications.json`,
 };
 
 export const fetchNotifications = createAsyncThunk(
-  'notifications/fetchNotifications',
+  "notifications/fetchNotifications",
   async () => {
-    const response = await axios.get('/notifications.json');
-    return response.data;
+    try {
+      const response = await axios.get(ENDPOINTS.notifications);
+      const currentNotifications = response.data.notifications;
+
+      const latestNotif = {
+        id: 3,
+        type: "urgent",
+        html: { __html: getLatestNotification() },
+      };
+
+      const indexToReplace = currentNotifications.findIndex(
+        (notification) => notification.id === 3
+      );
+
+      const updatedNotifications = [...currentNotifications];
+
+      if (indexToReplace !== -1) {
+        updatedNotifications[indexToReplace] = latestNotif;
+      } else {
+        updatedNotifications.push(latestNotif);
+      }
+
+      return updatedNotifications;
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      throw error;
+    }
   }
 );
 
 const notificationsSlice = createSlice({
-  name: 'notifications',
-  initialState: {
-    notifications: [],
-    displayDrawer: false, // Le test attend cette propriété
-  },
+  name: "notifications",
+  initialState,
   reducers: {
-    markAsRead: (state, action) => {
+    markNotificationAsRead: (state, action) => {
+      const idToRemove = action.payload;
+      console.log(`Notification ${idToRemove} has been marked as read`);
       state.notifications = state.notifications.filter(
-        (notification) => notification.id !== action.payload
+        (notification) => notification.id !== idToRemove
       );
     },
     showDrawer: (state) => {
@@ -41,13 +65,12 @@ const notificationsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(fetchNotifications.fulfilled, (state, action) => {
-      // Le test mocke des notifs et s'attend à ce que displayDrawer soit true à la fin du test ?
-      // Vérifie si le test force le displayDrawer ou si c'est une conséquence du chargement
       state.notifications = action.payload;
     });
   },
 });
 
-export const { markAsRead, showDrawer, hideDrawer } =
+export const { markNotificationAsRead, showDrawer, hideDrawer } =
   notificationsSlice.actions;
+
 export default notificationsSlice.reducer;

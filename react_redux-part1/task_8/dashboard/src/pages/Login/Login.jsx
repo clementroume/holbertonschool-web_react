@@ -1,107 +1,92 @@
-// External libraries.
-import React, { useRef } from 'react';
-import { StyleSheet, css } from 'aphrodite';
+import React, { useState } from 'react';
+import { StyleSheet, css } from "aphrodite";
+import WithLogging from "../../components/HOC/WithLogging";
+import useLogin from "../../hooks/useLogin";
+import { useDispatch } from "react-redux";
+import { login } from "../../features/auth/authSlice";
 
-// Custom hooks.
-import useLogin from '../../hooks/useLogin';
+const styles = StyleSheet.create({
+  body: {
+    display: "flex",
+    flexDirection: "column",
+    height: "60vh",
+    padding: "20px 20px 20px 40px",
+    borderTop: "5px solid red",
+    fontFamily: "Roboto, sans-serif",
+  },
+  paragraph: {
+    fontSize: "1.3rem",
+    margin: 0,
+  },
+  form: {
+    margin: "20px 0",
+    fontSize: "1.2rem",
+  },
+  label: {
+    paddingRight: "10px",
+  },
+  input: {
+    marginRight: "10px",
+  },
+  button: {
+    cursor: "pointer",
+  },
+  appBody: {
+    padding: '36px 24px',
+  },
+});
 
-const Login = (props) => {
-  // Extract login function from props with fallback.
-  const loginFunction = props.login || props.logIn || (() => { });
+function Login() {
+  const dispatch = useDispatch();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [enableSubmit, setEnableSubmit] = useState(false);
 
-  // Use custom login hook for form state management.
-  const {
-    email,
-    password,
-    enableSubmit,
-    handleChangeEmail,
-    handleChangePassword,
-    handleLoginSubmit,
-  } = useLogin({ onLogin: loginFunction });
+  const handleChangeEmail = (e) => {
+    setEmail(e.target.value);
+    setEnableSubmit(e.target.value !== '' && password !== '');
+  };
 
-  // Refs for input focus management.
-  const emailRef = useRef();
-  const passwordRef = useRef();
+  const handleChangePassword = (e) => {
+    setPassword(e.target.value);
+    setEnableSubmit(email !== '' && e.target.value !== '');
+  };
 
-  // Component styles with responsive design.
-  const styles = StyleSheet.create({
-    AppBody: {
-      padding: '2rem',
-      flex: 1,
-    },
-    AppBodyP: {
-      marginBottom: '1rem',
-    },
-    form: {
-      display: 'flex',
-      flexDirection: 'row',
-      justifyContent: 'flex-start',
-      alignItems: 'center',
-      gap: '1rem',
-      '@media (max-width: 900px)': {
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        gap: '0.5rem',
-      },
-    },
-    formInput: {
-      padding: '0 0.25rem',
-    },
-    formButton: {
-      padding: '0 0.25rem',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-  });
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    dispatch(login({ email, password }));
+  };
 
   return (
-    <div className={css(styles.AppBody)}>
-      <p className={css(styles.AppBodyP)}>Login to access the full dashboard</p>
-
-      <form role="form" aria-label="login form" className={css(styles.form)} onSubmit={handleLoginSubmit}>
-        <label
-          htmlFor="email"
-          onClick={() => emailRef.current && emailRef.current.focus()}
-        >
-          Email
+    <div className={css(styles.appBody)}>
+      <p>Login to access the full dashboard</p>
+      <form onSubmit={handleLoginSubmit} role="form">
+        <label htmlFor="email">
+          Email:
+          <input
+            type="email"
+            id="email"
+            name="email"
+            className={css(styles.input)}
+            value={email}
+            onChange={handleChangeEmail}
+          />
         </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          ref={emailRef}
-          className={css(styles.formInput)}
-          value={email}
-          onChange={handleChangeEmail}
-        />
-
-        <label
-          htmlFor="password"
-          onClick={() => passwordRef.current && passwordRef.current.focus()}
-        >
-          Password
+        <label htmlFor="password">
+          Password:
+          <input
+            type="password"
+            id="password"
+            name="password"
+            className={css(styles.input)}
+            value={password}
+            onChange={handleChangePassword}
+          />
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          role="textbox"
-          ref={passwordRef}
-          className={css(styles.formInput)}
-          value={password}
-          onChange={handleChangePassword}
-        />
-
-        <input
-          type="submit"
-          value="OK"
-          className={css(styles.formButton)}
-          disabled={!enableSubmit}
-        />
+        <input type="submit" value="OK" disabled={!enableSubmit} />
       </form>
     </div>
   );
-};
+}
 
-export default Login;
+export default WithLogging(Login);

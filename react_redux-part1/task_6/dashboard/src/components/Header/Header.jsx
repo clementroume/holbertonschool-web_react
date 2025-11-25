@@ -1,81 +1,40 @@
-// External libraries.
-import { StyleSheet, css } from 'aphrodite';
-import { useSelector, useDispatch } from 'react-redux';
+import { StyleSheet, css } from "aphrodite";
+import logo from "../../assets/holberton-logo.jpg";
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "../../features/auth/authSlice";
 
-// Redux actions
-import { logout } from '../../features/auth/authSlice';
-
-// Assets.
-import holbertonLogo from '../../assets/holberton-logo.jpg';
-
-// Styles.
 const styles = StyleSheet.create({
-  AppHeader: {
-    display: 'flex',
-    flexDirection: 'column',
-    borderBottom: '0.25rem solid #e1003c',
-    paddingBottom: '1rem'
-  },
-  headerRow: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: '1rem'
-  },
-  AppHeaderH1: {
-    fontFamily: "'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
-    fontWeight: 600,
-    letterSpacing: '0.025rem',
-    color: '#e1003c'
-  },
-  AppLogo: {
-    height: '15rem'
-  },
-  logoutSection: {
-    marginTop: '0.75rem'
-  },
-  logoutLink: {
-    cursor: 'pointer'
-  },
-  TitleContainer: {
-    height: '5rem',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'start'
-  },
+  header: { /* styles */ },
+  title: { /* styles */ },
+  logo: { /* styles */ },
+  logoutSection: { /* styles */ },
 });
 
-function Header() {
-  // Get state from Redux store
+export default function Header() {
+  const dispatch = useDispatch();
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const user = useSelector((state) => state.auth.user);
 
-  // Get dispatch function
-  const dispatch = useDispatch();
-
-  // Handle logout click event.
   const handleLogout = (e) => {
     e.preventDefault();
+    console.log("Logout clicked"); // debug
     dispatch(logout());
   };
 
+  console.log("Header render", { isLoggedIn, user }); // debug
+
   return (
-    <header className={css(styles.AppHeader)}>
-      <div className={css(styles.headerRow)}>
-        <img className={css(styles.AppLogo)} src={holbertonLogo} alt="holberton logo" />
-
-        <div className={css(styles.TitleContainer)}>
-          <h1 className={css(styles.AppHeaderH1)}>School Dashboard</h1>
-
-          {isLoggedIn && (
-            <div id="logoutSection" className={css(styles.logoutSection)}>
-              Welcome <b>{user.email}</b> (<a href="#" className={css(styles.logoutLink)} onClick={handleLogout}>logout</a>)
-            </div>
-          )}
+    <div className={css(styles.header)}>
+      <img src={logo} className={css(styles.logo)} alt="holberton logo" />
+      <h1 className={css(styles.title)}>School Dashboard</h1>
+      {isLoggedIn && (
+        <div className={css(styles.logoutSection)} id="logoutSection">
+          Welcome <b>{user.email}</b>{" "}
+          <a href="#" onClick={handleLogout}>
+            (logout)
+          </a>
         </div>
-      </div>
-    </header>
+      )}
+    </div>
   );
 }
-
-export default Header;

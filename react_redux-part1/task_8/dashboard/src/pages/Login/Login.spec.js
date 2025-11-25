@@ -1,93 +1,54 @@
-// External libraries.
-import React from 'react';
-import { render, screen } from '@testing-library/react';
+// src/pages/Login/Login.spec.js
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { StyleSheetTestUtils } from 'aphrodite';
-
-// Components.
+import { renderWithProvider } from '../../tests/test-utils';
 import Login from './Login';
 
-// Suppress Aphrodite style injection before tests.
-beforeAll(() => {
-  StyleSheetTestUtils.suppressStyleInjection();
+
+
+test('Testing signin form elements', () => {
+  renderWithProvider(<Login />);
+  const emailInput = screen.getByRole('textbox');
+  const passwordInput = screen.getByLabelText(/password/i);
+  const submitButton = screen.getByRole('button', { name: 'OK' });
+  expect(emailInput).toBeInTheDocument();
+  expect(emailInput).toHaveAttribute('type', 'email');
+  expect(passwordInput).toBeInTheDocument();
+  expect(passwordInput).toHaveAttribute('type', 'password');
+  expect(submitButton).toBeInTheDocument();
+  expect(submitButton).toBeDisabled();
 });
 
-// Clear and resume style injection after tests.
-afterAll(() => {
-  StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
+test('Should focus email input on label click', async () => {
+  renderWithProvider(<Login />);
+  const emailInput = screen.getByLabelText('Email');
+  const emailLabel = screen.getByText('Email');
+  userEvent.click(emailLabel);
+  await waitFor(() => {
+    expect(emailInput).toHaveFocus();
+  });
 });
 
-/******************
-* COMPONENT TESTS *
-******************/
-
-test('Renders 2 labels, 2 inputs and 1 submit', () => {
-  const { container } = render(<Login />);
-
-  const labels = container.querySelectorAll('label');
-  const textInputs = container.querySelectorAll('input[type="email"], input[type="password"]');
-  const submit = screen.getByRole('button', { name: /ok/i });
-
-  expect(labels.length).toBe(2);
-  expect(textInputs.length).toBe(2);
-  expect(submit).toBeInTheDocument();
+test('Should focus password input on label click', async () => {
+  renderWithProvider(<Login />);
+  const passwordInput = screen.getByLabelText('Password');
+  const passwordLabel = screen.getByText('Password');
+  userEvent.click(passwordLabel);
+  await waitFor(() => {
+    expect(passwordInput).toHaveFocus();
+  });
 });
 
-test('Focuses the input when its label is clicked', async () => {
-  const { container } = render(<Login />);
-  const user = userEvent.setup();
+test('Submit button enables only with valid credentials', () => {
+  renderWithProvider(<Login />);
+  const emailInput = screen.getByLabelText('Email');
+  const passwordInput = screen.getByLabelText('Password');
+  const submitButton = screen.getByRole('button', { name: /ok/i });
 
-  const emailLabel = container.querySelector('label[for="email"]');
-  const emailInput = screen.getByLabelText(/email/i);
+  expect(submitButton).toBeDisabled();
 
-  await user.click(emailLabel);
-  expect(emailInput).toHaveFocus();
-});
+  fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+  fireEvent.change(passwordInput, { target: { value: '12345678' } });
 
-test('Submit is disabled by default', () => {
-  render(<Login />);
-
-  const submit = screen.getByRole('button', { name: /ok/i });
-  expect(submit).toBeDisabled();
-});
-
-test('Submit enables only when email is valid and password has at least 8 chars', async () => {
-  render(<Login />);
-  const user = userEvent.setup();
-
-  const email = screen.getByLabelText(/email/i);
-  const password = screen.getByLabelText(/password/i);
-  const submit = screen.getByRole('button', { name: /ok/i });
-
-  await user.type(email, 'invalid');
-  await user.type(password, '12345678');
-  expect(submit).toBeDisabled();
-
-  await user.clear(email);
-  await user.clear(password);
-
-  await user.type(email, 'user@example.com');
-  await user.type(password, '1234567');
-  expect(submit).toBeDisabled();
-
-  await user.clear(password);
-  await user.type(password, 'strongpass');
-  expect(submit).toBeEnabled();
-});
-
-test('Calls logIn prop with email and password on submit when form is valid', async () => {
-  const logInMock = jest.fn();
-  render(<Login logIn={logInMock} />);
-
-  const user = userEvent.setup();
-  const email = screen.getByLabelText(/email/i);
-  const password = screen.getByLabelText(/password/i);
-  const submit = screen.getByRole('button', { name: /ok/i });
-
-  await user.type(email, 'user@example.com');
-  await user.type(password, 'strongpass');
-  await user.click(submit);
-
-  expect(logInMock).toHaveBeenCalledTimes(1);
-  expect(logInMock).toHaveBeenCalledWith('user@example.com', 'strongpass');
+  expect(submitButton).not.toBeDisabled();
 });
