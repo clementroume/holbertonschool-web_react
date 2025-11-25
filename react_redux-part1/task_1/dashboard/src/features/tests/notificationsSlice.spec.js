@@ -3,75 +3,93 @@ import notificationsReducer, {
   showDrawer,
   hideDrawer,
   fetchNotifications,
-  API_BASE_URL
 } from '../notifications/notificationsSlice';
+import { configureStore } from '@reduxjs/toolkit';
+import axios from 'axios';
+
+jest.mock('axios');
+
+jest.mock('../../utils/utils', () => ({
+  getLatestNotification: jest.fn(() => '<strong>Latest notification content</strong>'),
+}));
 
 describe('notificationsSlice', () => {
   const initialState = {
     notifications: [],
-    displayDrawer: true
+    displayDrawer: true,
   };
 
-  it('should handle initial state', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('Should return the initial state', () => {
     expect(notificationsReducer(undefined, { type: 'unknown' })).toEqual(initialState);
   });
 
-  describe('fetchNotifications', () => {
-    it('should update notifications when fetchNotifications is fulfilled', async () => {
-      const mockNotifications = [
-        { id: 1, type: 'default', value: 'New course available' },
-        { id: 2, type: 'urgent', value: 'New resume available' },
-        { id: 3, type: 'urgent', value: 'Updated notification' }
-      ];
+  it('Should handle markNotificationAsRead', () => {
+    const stateWithNotifications = {
+      notifications: [
+        { id: 1, type: 'default', value: 'Notification 1' },
+        { id: 2, type: 'urgent', value: 'Notification 2' },
+        { id: 3, type: 'urgent', value: 'Notification 3' },
+      ],
+      displayDrawer: true,
+    };
 
-      global.fetch = jest.fn(() =>
-        Promise.resolve({
-          json: () => Promise.resolve(mockNotifications)
-        })
-      );
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
-      const action = {
-        type: fetchNotifications.fulfilled.type,
-        payload: mockNotifications
-      };
+    const actual = notificationsReducer(stateWithNotifications, markNotificationAsRead(2));
 
-      const state = notificationsReducer(initialState, action);
-      expect(state.notifications).toEqual(mockNotifications);
-    });
+    expect(actual.notifications).toHaveLength(2);
+    expect(actual.notifications.find((n) => n.id === 2)).toBeUndefined();
+    expect(consoleSpy).toHaveBeenCalledWith('Marking notification 2 as read');
+
+    consoleSpy.mockRestore();
   });
 
-  describe('markNotificationAsRead', () => {
-    it('should remove the notification with the specified id', () => {
-      const startState = {
-        ...initialState,
-        notifications: [
-          { id: 1, type: 'default', value: 'New course available' },
-          { id: 2, type: 'urgent', value: 'New resume available' }
-        ]
-      };
+  it('Should handle showDrawer', () => {
+    const stateWithDrawerHidden = {
+      notifications: [],
+      displayDrawer: false,
+    };
 
-      const action = markNotificationAsRead(1);
-      const state = notificationsReducer(startState, action);
+    const actual = notificationsReducer(stateWithDrawerHidden, showDrawer());
 
-      expect(state.notifications).toHaveLength(1);
-      expect(state.notifications[0].id).toBe(2);
-    });
+    expect(actual.displayDrawer).toBe(true);
   });
 
-  describe('drawer visibility', () => {
-    it('should show drawer', () => {
-      const startState = {
-        ...initialState,
-        displayDrawer: false
-      };
+  it('should handle hideDrawer', () => {
+    const stateWithDrawerShown = {
+      notifications: [],
+      displayDrawer: true,
+    };
 
-      const state = notificationsReducer(startState, showDrawer());
-      expect(state.displayDrawer).toBe(true);
+    const actual = notificationsReducer(stateWithDrawerShown, hideDrawer());
+
+    expect(actual.displayDrawer).toBe(false);
+  });
+
+  it('Should fetch notifications data correctly', async () => {
+    const mockNotifications = [
+      { id: 1, type: 'default', value: 'Notification 1' },
+      { id: 2, type: 'urgent', value: 'Notification 2' },
+      { id: 3, type: 'urgent', value: 'Notification 3' },
+    ];
+
+    axios.get.mockResolvedValueOnce({
+      data: { notifications: mockNotifications },
     });
 
-    it('should hide drawer', () => {
-      const state = notificationsReducer(initialState, hideDrawer());
-      expect(state.displayDrawer).toBe(false);
+    const store = configureStore({
+      reducer: { notifications: notificationsReducer },
     });
+
+    await store.dispatch(fetchNotifications());
+
+    const state = store.getState().notifications;
+
+    expect(state.notifications).toHaveLength(3);
+    expect(state.notifications[2].html.__html).toBe('<strong>Latest notification content</strong>');
   });
 });

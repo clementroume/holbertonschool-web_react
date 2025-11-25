@@ -3,9 +3,9 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   user: {
     email: '',
-    password: '',
+    password: ''
   },
-  isLoggedIn: false,
+  isLoggedIn: false
 };
 
 const authSlice = createSlice({
@@ -22,9 +22,10 @@ const authSlice = createSlice({
       state.user.email = '';
       state.user.password = '';
       state.isLoggedIn = false;
-    },
-  },
+    }
+  }
 });
 
 export const { login, logout } = authSlice.actions;
+
 export default authSlice.reducer;
