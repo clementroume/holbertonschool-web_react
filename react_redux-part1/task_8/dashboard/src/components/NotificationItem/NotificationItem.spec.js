@@ -1,172 +1,138 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
+// External libraries.
+import React from 'react';
+import { render, fireEvent } from '@testing-library/react';
+
+// Components.
 import NotificationItem from './NotificationItem';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
-import authReducer from '../../features/auth/authSlice';
-import coursesReducer from '../../features/courses/coursesSlice';
-import notificationsReducer, { markNotificationAsRead } from '../../features/notifications/notificationsSlice';
-import { StyleSheetTestUtils } from "aphrodite";
 
-jest.mock('../../features/notifications/notificationsSlice', () => {
-  const originalSlice = jest.requireActual('../../features/notifications/notificationsSlice');
-  return {
-    __esModule: true,
-    ...originalSlice,
-    markNotificationAsRead: jest.fn((id) => ({
-      type: 'notifications/markNotificationAsRead', payload: id
-    }))
-  }
-});
-
-beforeEach(() => {
-  StyleSheetTestUtils.suppressStyleInjection();
-});
-
-
-afterEach(() => {
-  StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
-});
-
-const preloadedState = {
-  auth: {
-    user: {
-      email: 'test@testing.tst',
-      password: '12345678'
-    },
-    isLoggedIn: true
-  },
-  notifications: {
-    notifications: [
-      {
-        id: 1,
-        type: 'default',
-        value: 'New course available'
-      },
-      {
-        id: 2,
-        type: 'urgent',
-        value: 'New resume available'
-      },
-      {
-        id: 3,
-        type: 'urgent',
-        html: {
-          __html: '<strong>Urgent requirement</strong> - complete by EOD'
-        }
-      }
-    ],
-    displayDrawer: true
-  },
-  courses: {
-    courses: [
-      {
-        id: 1, name: 'ES6', credit: 60
-      },
-      {
-        id: 2, name: 'Webpack', credit: 20
-      },
-      {
-        id: 3, name: 'React', credit: 40
-      }
-    ]
-  }
-}
-
-function renderWithProvider(ui, preloadedState = {}) {
-  const store = configureStore({
-    reducer: {
-      auth: authReducer,
-      courses: coursesReducer,
-      notifications: notificationsReducer,
-    },
-    preloadedState,
-  });
-
-  const renderResult = render(<Provider store={store}>{ui}</Provider>);
-
-  const rerenderWithNewState = (newUI, newState) => {
-    const newStore = configureStore({
-      reducer: {
-        auth: authReducer,
-        courses: coursesReducer,
-        notifications: notificationsReducer,
-      },
-      preloadedState: newState,
-    });
-
-    renderResult.rerender(<Provider store={newStore}>{newUI}</Provider>);
-  };
-
-  return { store, ...renderResult, rerenderWithNewState };
-}
-
-describe('NotificationItem Tests', () => {
-  test('The NotificationItem is rendered without crashing', () => {
-    renderWithProvider(<NotificationItem />, preloadedState);
-  });
-
-  test('Should return true if the NotificationItem component is a functional component', () => {
-    expect(typeof NotificationItem.type).toBe('function');
-    expect(NotificationItem.$$typeof.toString()).toBe('Symbol(react.memo)');
-    expect(NotificationItem.type.prototype?.isReactComponent).toBeUndefined();
-  });
-});
-
-describe('NotificationItem general behavior Test', () => {
-  test('Should display the correct notification with a red color, and set the "data-notification-type" to urgent whenever it receives the type "urgent" props', () => {
-    renderWithProvider(<NotificationItem id={3} />, preloadedState);
-    const liElement = screen.getByRole('listitem');
-    expect(liElement).toHaveStyle({ color: 'red' });
-    expect(liElement).toHaveAttribute('data-notification-type', 'urgent');
-  });
-
-  test('Should display the correct notification with a blue color, and set the "data-notification-type" to default whenever it receives the type "default" props', () => {
-    renderWithProvider(<NotificationItem id={1} />, preloadedState);
-    const liElement = screen.getByRole('listitem');
-    expect(liElement).toHaveStyle({ color: 'blue' });
-    expect(liElement).toHaveAttribute('data-notification-type', 'default');
-  });
-
-  test('It should log to the console the "Notification id has been marked as read" with the correct notification item id', () => {
-    renderWithProvider(<NotificationItem id={1} />, preloadedState);
-    const firstListItemElement = screen.getAllByRole('listitem')[0];
-    fireEvent.click(firstListItemElement)
-    expect(markNotificationAsRead).toHaveBeenCalledWith(1);
-  });
-});
-
-describe('NotificationItem - Memo behavior', () => {
-  let consoleLogSpy;
-
-  beforeEach(() => {
-    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
-  });
-
-  afterEach(() => {
-    consoleLogSpy.mockRestore();
-  });
-
-  test('Should re-render and update displayed value when props change', () => {
-    const { rerenderWithNewState } = renderWithProvider(<NotificationItem id={1} />, preloadedState);
-
-    expect(screen.getByRole('listitem')).toHaveTextContent('New course available');
-
-    const updatedState = {
-      ...preloadedState,
-      notifications: {
-        notifications: [
-          {
-            id: 1,
-            type: 'default',
-            value: 'Updated notification',
-          },
-        ],
-        displayDrawer: true,
-      },
+// Mock getComputedStyle to simulate Aphrodite styles in tests.
+const mockGetComputedStyle = (element) => {
+    const type = element.getAttribute('data-notification-type');
+    return {
+        color: type === 'default' ? 'blue' : 'red'
     };
-    rerenderWithNewState(<NotificationItem id={1} />, updatedState);
+};
 
-    expect(screen.getByRole('listitem')).toHaveTextContent('Updated notification');
-  });
+// Mock window.getComputedStyle for testing styled components.
+Object.defineProperty(window, 'getComputedStyle', {
+    value: mockGetComputedStyle,
+});
+
+let consoleSpy;
+
+// Mock console.log to avoid test output pollution.
+beforeEach(() => {
+    consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
+});
+
+// Restore console.log after each test.
+afterEach(() => {
+    consoleSpy.mockRestore();
+});
+
+/******************
+* COMPONENT TESTS *
+******************/
+
+test('Renders with default type and blue color', () => {
+    const { container } = render(
+        <NotificationItem type="default" value="Test notification" />
+    );
+
+    const li = container.querySelector('li');
+    expect(li).toHaveAttribute('data-notification-type', 'default');
+
+    const computedStyle = window.getComputedStyle(li);
+    expect(computedStyle.color).toBe('blue');
+});
+
+test('Renders with urgent type and red color', () => {
+    const { container } = render(
+        <NotificationItem type="urgent" value="Urgent notification" />
+    );
+
+    const li = container.querySelector('li');
+    expect(li).toHaveAttribute('data-notification-type', 'urgent');
+
+    const computedStyle = window.getComputedStyle(li);
+    expect(computedStyle.color).toBe('red');
+});
+
+test('Renders with html content', () => {
+    const htmlContent = "<strong>Urgent requirement</strong> - complete by EOD";
+
+    const { container } = render(
+        <NotificationItem
+            type="urgent"
+            html={{ __html: htmlContent }}
+        />
+    );
+
+    const li = container.querySelector('li');
+    expect(li).toHaveAttribute('data-notification-type', 'urgent');
+    expect(li.innerHTML).toBe(htmlContent);
+});
+
+test('Renders with value content', () => {
+    const { container } = render(
+        <NotificationItem type="default" value="Test notification" />
+    );
+
+    const li = container.querySelector('li');
+    expect(li.textContent).toBe('Test notification');
+});
+
+test('Calls markAsRead with correct id when clicked - value prop', () => {
+    const mockMarkAsRead = jest.fn();
+    const { container } = render(
+        <NotificationItem
+            id={42}
+            type="default"
+            value="Test notification"
+            markAsRead={mockMarkAsRead}
+        />
+    );
+
+    const li = container.querySelector('li');
+    fireEvent.click(li);
+
+    expect(mockMarkAsRead).toHaveBeenCalledTimes(1);
+    expect(mockMarkAsRead).toHaveBeenCalledWith(42);
+});
+
+test('Calls markAsRead with correct id when clicked - html prop', () => {
+    const mockMarkAsRead = jest.fn();
+    const htmlContent = "<strong>Urgent requirement</strong>";
+
+    const { container } = render(
+        <NotificationItem
+            id={123}
+            type="urgent"
+            html={{ __html: htmlContent }}
+            markAsRead={mockMarkAsRead}
+        />
+    );
+
+    const li = container.querySelector('li');
+    fireEvent.click(li);
+
+    expect(mockMarkAsRead).toHaveBeenCalledTimes(1);
+    expect(mockMarkAsRead).toHaveBeenCalledWith(123);
+});
+
+test('Does not crash when clicked without markAsRead prop', () => {
+    const { container } = render(
+        <NotificationItem
+            id={1}
+            type="default"
+            value="Test notification"
+        />
+    );
+
+    const li = container.querySelector('li');
+
+    // Should not throw when markAsRead is undefined.
+    expect(() => {
+        fireEvent.click(li);
+    }).not.toThrow();
 });

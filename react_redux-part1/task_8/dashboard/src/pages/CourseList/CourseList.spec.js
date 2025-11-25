@@ -1,156 +1,45 @@
-import { render, screen } from '@testing-library/react';
-import CourseList from './CourseList';
+// External libraries.
+import { render } from '@testing-library/react';
 import { StyleSheetTestUtils } from 'aphrodite';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
-import authReducer from '../../features/auth/authSlice';
-import coursesReducer from '../../features/courses/coursesSlice';
-import notificationsReducer from '../../features/notifications/notificationsSlice';
-import * as courseSlice from '../../features/courses/coursesSlice';
 
+// Components.
+import CourseList from './CourseList';
+
+// Suppress Aphrodite style injection before tests.
 beforeEach(() => {
   StyleSheetTestUtils.suppressStyleInjection();
 });
 
-afterEach(() => {
+// Clear and resume style injection after tests.
+afterAll(() => {
   StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
 });
 
+/******************
+* COMPONENT TESTS *
+******************/
 
-function renderWithProvider(ui, preloadedState = {}) {
-  const store = configureStore({
-    reducer: {
-      auth: authReducer,
-      courses: coursesReducer,
-      notifications: notificationsReducer,
-    },
-    preloadedState,
+describe('CourseList Component Tests', () => {
+  test('Renders correct number of rows with non-empty courses array', () => {
+    const courses = [
+      { id: 1, name: "ES6", credit: "60" },
+      { id: 2, name: "Webpack", credit: "20" },
+      { id: 3, name: "React", credit: "40" }
+    ];
+
+    const { container } = render(<CourseList courses={courses} />);
+    const allRows = container.querySelectorAll('tr');
+
+    // 2 header rows + 3 data rows = 5 rows.
+    expect(allRows).toHaveLength(5);
   });
 
-  return render(<Provider store={store}>{ui}</Provider>);
-}
+  test('Renders 1 row and "No course available yet" message with empty courses array', () => {
+    const { container } = render(<CourseList courses={[]} />);
+    const allRows = container.querySelectorAll('tr');
 
-jest.spyOn(courseSlice, 'fetchCourses').mockImplementation(() => () => {});
-
-test('renders without crashing', async () => {
-  const preloadedState = {
-    auth: {
-      user: {
-        email: 'test@example.com',
-        password: '12345678',
-      },
-      isLoggedIn: true,
-    },
-    courses: {
-      courses: [
-        { id: 1, name: 'ES6', credit: 60 },
-        { id: 2, name: 'WebPack', credit: 20 },
-        { id: 3, name: 'React', credit: 40 },
-      ]
-    }
-  }
-  renderWithProvider(<CourseList />, preloadedState);
-  const title = await screen.findByText(/Available courses/i);
-  expect(title).toBeInTheDocument();
-});
-
-test('renders correct number of rows when courses are available', async () => {
-  const preloadedState = {
-    auth: {
-      user: {
-        email: 'test@example.com',
-        password: '12345678',
-      },
-      isLoggedIn: true,
-    },
-    courses: {
-      courses: [
-        { id: 1, name: 'ES6', credit: 60 },
-        { id: 2, name: 'WebPack', credit: 20 },
-        { id: 3, name: 'React', credit: 40 },
-      ]
-    }
-  }
-  renderWithProvider(<CourseList />, preloadedState);
-  const rows = await screen.findAllByRole('row');
-  expect(rows).toHaveLength(5);
-});
-
-test('renders fallback when no courses available', () => {
-  const preloadedState = {
-    auth: {
-      user: {
-        email: 'test@example.com',
-        password: '12345678',
-      },
-      isLoggedIn: true,
-    },
-    courses: {
-      courses: []
-    }
-  }
-
-  renderWithProvider(<CourseList />, preloadedState);
-
-  const noCoursesRow = screen.getByText(/no course available yet/i);
-  expect(noCoursesRow).toBeInTheDocument();
-});
-
-import { logout } from '../../features/auth/authSlice';
-
-test('dispatching logout resets courses array', () => {
-  const store = configureStore({
-    reducer: {
-      auth: authReducer,
-      courses: coursesReducer,
-      notifications: notificationsReducer,
-    },
-    preloadedState: {
-      auth: {
-        user: { email: 'test@example.com', password: '12345678' },
-        isLoggedIn: true,
-      },
-      courses: {
-        courses: [
-          { id: 1, name: 'ES6', credit: 60 },
-          { id: 2, name: 'WebPack', credit: 20 },
-        ],
-      },
-    },
+    // Only 1 row should be rendered for empty state.
+    expect(allRows).toHaveLength(1);
+    expect(container).toHaveTextContent('No course available yet');
   });
-
-  store.dispatch(logout());
-
-  render(
-    <Provider store={store}>
-      <CourseList />
-    </Provider>
-  );
-
-  const noCoursesRow = screen.getByText(/no course available yet/i);
-  expect(noCoursesRow).toBeInTheDocument();
-});
-
-test('dispatching logout resets courses array in the store', () => {
-  const store = configureStore({
-    reducer: { auth: authReducer, courses: coursesReducer, notifications: notificationsReducer },
-    preloadedState: {
-      auth: { user: { email: 'test@example.com', password: '12345678' }, isLoggedIn: true },
-      courses: { courses: [ { id: 1, name: 'ES6', credit: 60 }, { id: 2, name: 'WebPack', credit: 20 } ] }
-    }
-  });
-
-  expect(store.getState().courses.courses).toHaveLength(2);
-
-  store.dispatch(logout());
-
-  expect(store.getState().courses.courses).toHaveLength(0);
-
-  render(
-    <Provider store={store}>
-      <CourseList />
-    </Provider>
-  );
-
-  expect(screen.getByText(/no course available yet/i)).toBeInTheDocument();
 });

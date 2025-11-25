@@ -1,78 +1,75 @@
-import { memo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { markNotificationAsRead } from '../../features/notifications/notificationsSlice';
-import { useRef, useEffect } from 'react';
-import { createSelector } from 'reselect';
+// External libraries.
+import React, { memo, useRef } from 'react';
+import { StyleSheet, css } from 'aphrodite';
 
+// Styles.
+const styles = StyleSheet.create({
+  default: {
+    color: 'blue',
+    cursor: 'pointer',
+  },
+  urgent: {
+    color: 'red',
+    cursor: 'pointer',
+  }
+});
 
-const selectNotificationByIdCache = {};
+const NotificationItem = memo(({ type = 'default', html, value, id, markAsRead }) => {
+  // Ref for the list item element.
+  const liRef = useRef();
 
-function getSelectNotificationById(id) {
-    if (!selectNotificationByIdCache[id]) {
-        selectNotificationByIdCache[id] = createSelector(
-            (state) => state.notifications.notifications,
-            (notifications) => notifications.find((notif) => notif.id === id)
-        );
+  // Handles notification item click and marks as read.
+  const handleClick = () => {
+    if (markAsRead) {
+      markAsRead(id);
     }
-    return selectNotificationByIdCache[id];
-}
+  };
 
-const NotificationItem = memo(function NotificationItem({ id }) {
-    const dispatch = useDispatch();
+  // Checks if a string contains HTML tags.
+  const containsHTML = (str) => {
+    return typeof str === 'string' && /<\/?[a-z][\s\S]*>/i.test(str);
+  };
 
-    const renderCountRef = useRef(0);
-    useEffect(() => {
-        renderCountRef.current += 1;
+  // Determine style class based on notification type.
+  const styleClass = type === 'urgent' ? styles.urgent : styles.default;
 
-        console.groupCollapsed(`🔄 NotificationItem Render #${renderCountRef.current}`);
-        console.log('Props - id:', id);
-        console.log('Notification:', notification);
-        console.groupEnd();
-    });
-
-    const selectNotification = getSelectNotificationById(id);
-    const notification = useSelector(selectNotification);
-    if (!notification)
-        return null;
-
-    const { type, value, html } = notification;
-
-    const handleClick = () => {
-        dispatch(markNotificationAsRead(id));
-    };
-
-    if (type === 'default') {
-        return (
-            <li
-                style={{ color: "blue" }}
-                data-notification-type={type}
-                onClick={handleClick}
-            >
-                {value}
-            </li>
-        );
-    }
-
-    if (type === 'urgent' && html !== undefined) {
-        return (
-            <li
-                style={{ color: "red" }}
-                data-notification-type={type}
-                dangerouslySetInnerHTML={html}
-                onClick={handleClick}
-            />
-        );
-    }
-
+  // Render with HTML prop (dangerouslySetInnerHTML object).
+  if (html) {
     return (
-        <li
-            style={{ color: "red" }}
-            data-notification-type={type}
-            onClick={handleClick}
-        >
-            {value}
-        </li>
+      <li
+        ref={liRef}
+        className={css(styleClass)}
+        data-notification-type={type}
+        dangerouslySetInnerHTML={html}
+        onClick={handleClick}
+      />
     );
+  }
+
+  // Render with HTML string value.
+  if (value && containsHTML(value)) {
+    return (
+      <li
+        ref={liRef}
+        className={css(styleClass)}
+        data-notification-type={type}
+        dangerouslySetInnerHTML={{ __html: value }}
+        onClick={handleClick}
+      />
+    );
+  }
+
+  // Render with plain text value.
+  return (
+    <li
+      ref={liRef}
+      className={css(styleClass)}
+      data-notification-type={type}
+      onClick={handleClick}
+    >
+      {value}
+    </li>
+  );
 });
 
 export default NotificationItem;

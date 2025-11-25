@@ -3,12 +3,12 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   user: {
     email: '',
-    password: '',
+    password: ''
   },
-  isLoggedIn: false,
-}
+  isLoggedIn: false
+};
 
-export const authSlice = createSlice({
+const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
@@ -19,11 +19,13 @@ export const authSlice = createSlice({
       state.isLoggedIn = true;
     },
     logout: (state) => {
-      state.user = initialState.user;
-      state.isLoggedIn = initialState.isLoggedIn;
+      state.user.email = '';
+      state.user.password = '';
+      state.isLoggedIn = false;
     }
   }
-})
+});
 
 export const { login, logout } = authSlice.actions;
+
 export default authSlice.reducer;
