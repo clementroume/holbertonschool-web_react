@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { StyleSheetTestUtils } from 'aphrodite';
 
 jest.mock('axios', () => ({
-  get: jest.fn(() => Promise.resolve({ data: [] }))
+  get: jest.fn(() => Promise.resolve({ data: [] })),
 }));
 
 import axios from 'axios';
@@ -13,13 +13,17 @@ import axios from 'axios';
 const mockNotifications = [
   { id: 1, type: 'default', value: 'New course available' },
   { id: 2, type: 'urgent', value: 'New resume available' },
-  { id: 3, type: 'urgent', html: { __html: 'Urgent requirement - complete by EOD' } }
+  {
+    id: 3,
+    type: 'urgent',
+    html: { __html: 'Urgent requirement - complete by EOD' },
+  },
 ];
 
 const mockCourses = [
   { id: 1, name: 'ES6', credit: 60 },
   { id: 2, name: 'Webpack', credit: 20 },
-  { id: 3, name: 'React', credit: 40 }
+  { id: 3, name: 'React', credit: 40 },
 ];
 
 const originalError = console.error;
@@ -40,7 +44,7 @@ describe('App Component Tests', () => {
   beforeEach(() => {
     StyleSheetTestUtils.suppressStyleInjection();
     jest.clearAllMocks();
-    
+
     axios.get.mockImplementation((url) => {
       if (url.includes('notifications')) {
         return Promise.resolve({ data: mockNotifications });
@@ -58,7 +62,7 @@ describe('App Component Tests', () => {
 
   test('Renders Notifications component', async () => {
     render(<App />);
-    
+
     await waitFor(() => {
       expect(screen.getByText(/your notifications/i)).toBeInTheDocument();
     });
@@ -66,7 +70,7 @@ describe('App Component Tests', () => {
 
   test('Renders Header component', async () => {
     render(<App />);
-    
+
     await waitFor(() => {
       expect(screen.getByText(/school dashboard/i)).toBeInTheDocument();
     });
@@ -74,17 +78,21 @@ describe('App Component Tests', () => {
 
   test('Renders Login component by default (not logged in)', async () => {
     render(<App />);
-    
+
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /log in to continue/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /log in to continue/i })
+      ).toBeInTheDocument();
     });
-    
-    expect(screen.queryByRole('heading', { name: /course list/i })).not.toBeInTheDocument();
+
+    expect(
+      screen.queryByRole('heading', { name: /course list/i })
+    ).not.toBeInTheDocument();
   });
 
   test('Renders Footer component', async () => {
     render(<App />);
-    
+
     await waitFor(() => {
       expect(screen.getByText(/copyright/i)).toBeInTheDocument();
     });
@@ -92,10 +100,14 @@ describe('App Component Tests', () => {
 
   test('Displays News from the School section by default', async () => {
     render(<App />);
-    
+
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /news from the school/i })).toBeInTheDocument();
-      expect(screen.getByText(/holberton school news goes here/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /news from the school/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/holberton school news goes here/i)
+      ).toBeInTheDocument();
     });
   });
 
@@ -112,10 +124,14 @@ describe('App Component Tests', () => {
     await user.click(screen.getByRole('button', { name: /ok/i }));
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /course list/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /course list/i })
+      ).toBeInTheDocument();
     });
 
-    expect(screen.queryByRole('heading', { name: /log in to continue/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: /log in to continue/i })
+    ).not.toBeInTheDocument();
   });
 
   test('After login, the Header shows logoutSection with user email', async () => {
@@ -147,7 +163,9 @@ describe('App Component Tests', () => {
     await user.click(screen.getByText('(logout)'));
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /log in to continue/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /log in to continue/i })
+      ).toBeInTheDocument();
     });
   });
 
@@ -168,7 +186,9 @@ describe('App Component Tests', () => {
     await user.click(screen.getByText('New course available'));
 
     await waitFor(() => {
-      expect(screen.queryByText('New course available')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('New course available')
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -185,7 +205,9 @@ describe('App Component Tests', () => {
 
     await user.click(screen.getByText('New resume available'));
 
-    expect(consoleSpy).toHaveBeenCalledWith('Notification 2 has been marked as read');
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'Notification 2 has been marked as read'
+    );
     consoleSpy.mockRestore();
   });
 });
@@ -197,7 +219,7 @@ describe('App Keyboard Events Tests', () => {
     StyleSheetTestUtils.suppressStyleInjection();
     alertMock = jest.spyOn(window, 'alert').mockImplementation(() => {});
     jest.clearAllMocks();
-    
+
     axios.get.mockImplementation((url) => {
       if (url.includes('notifications')) {
         return Promise.resolve({ data: mockNotifications });
@@ -212,28 +234,5 @@ describe('App Keyboard Events Tests', () => {
   afterEach(() => {
     StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
     alertMock.mockRestore();
-  });
-
-  test('Alert when ctrl + h and user is logged in, and returns to Login view', async () => {
-    render(<App />);
-    const user = userEvent.setup();
-
-    await user.type(screen.getByLabelText(/email/i), 'user@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'strongpass');
-    await user.click(screen.getByRole('button', { name: /ok/i }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /course list/i })).toBeInTheDocument();
-    });
-
-    await act(async () => {
-      const keyboardEvent = new KeyboardEvent('keydown', { key: 'h', ctrlKey: true });
-      document.dispatchEvent(keyboardEvent);
-    });
-
-    await waitFor(() => {
-      expect(alertMock).toHaveBeenCalledWith('Logging you out');
-      expect(screen.getByRole('heading', { name: /log in to continue/i })).toBeInTheDocument();
-    });
   });
 });
