@@ -1,29 +1,55 @@
-import './Header.css';
-import logo from '../../assets/holberton-logo.jpg';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../features/auth/authSlice';
+import logo from '../../assets/holberton-logo.jpg';
+import { StyleSheet, css } from "aphrodite";
+
+const styles = StyleSheet.create({
+  header: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  logo: {
+    height: "30vmin",
+    pointerEvents: "none",
+  },
+  h1: {
+    color: "#e1003c",
+    fontFamily: "Roboto, sans-serif",
+    fontWeight: "bold",
+    fontSize: "2.5rem",
+    margin: 0,
+  },
+  logoutSection: {
+    fontFamily: "Roboto, sans-serif",
+    fontSize: "1.2rem",
+    marginLeft: "auto",
+  },
+  a: {
+    fontFamily: "Roboto, sans-serif",
+    fontSize: "1.2rem",
+    cursor: "pointer",
+  },
+});
+
 
 export default function Header() {
-  const { user, isLoggedIn } = useSelector(state => state.auth);
   const dispatch = useDispatch();
+  const { isLoggedIn, user } = useSelector((state) => state.auth);
 
-  const handleLogOut = (e) => {
-    e.preventDefault();
+  const handleLogout = () => {
     dispatch(logout());
   };
 
   return (
-    <div className="header">
-      <img src={logo} className="logo" alt="holberton logo" />
-      <h1 className="title">School Dashboard</h1>
-      {isLoggedIn && (
-        <div className="logout-section" id="logoutSection">
-          Welcome <b>{user.email}</b>{' '}
-          <a href="#" onClick={handleLogOut}>
-            (logout)
-          </a>
+    <div className={css(styles.header)}>
+      <img src={logo} className={css(styles.logo)} alt="holberton logo" />
+      <h1 className={css(styles.h1)}>School Dashboard</h1>
+      {isLoggedIn ? (
+        <div id="logoutSection" className={css(styles.logoutSection)}>
+          Welcome <b>{user.email}</b> <a className={css(styles.a)} href="#" onClick={handleLogout}>(logout)</a>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -1,24 +1,47 @@
-import './NotificationItem.css';
 import { memo } from 'react';
-import { useDispatch } from 'react-redux';
-import { markNotificationAsRead } from '../../features/notifications/notificationsSlice';
+import { StyleSheet, css } from "aphrodite";
 
-const NotificationItem = memo(function NotificationItem({ id, type, value }) {
-    const dispatch = useDispatch();
+const styles = StyleSheet.create({
+  default: {
+    color: "blue",
+    "@media (max-width: 900px)": {
+      width: "100%",
+      borderBottom: "1px solid black",
+      fontSize: "20px",
+      padding: "10px 8px",
+      listStyle: "none",
+    },
+  },
+  urgent: {
+    color: "red",
+    "@media (max-width: 900px)": {
+      width: "100%",
+      borderBottom: "1px solid black",
+      fontSize: "20px",
+      padding: "10px 8px",
+      listStyle: "none",
+    },
+  },
+});
 
-    const handleClick = () => {
-        dispatch(markNotificationAsRead(id));
-    };
+const NotificationItem = memo(function NotificationItem({ 
+  type,
+  value,
+  markAsRead,
+  id
+}) {
 
-    return (
-        <li
-            className={`notification-item ${type === 'urgent' ? 'urgent' : 'default'}`}
-            data-notification-type={type}
-            onClick={handleClick}
-        >
-            {value}
-        </li>
-    );
+  const itemStyle = type === "default" ? styles.default : styles.urgent;
+
+  return (
+    <li
+      className={css(itemStyle)}
+      data-notification-type={type}
+      onClick={() => markAsRead(id)}
+    >
+      {value}
+    </li>
+  );
 });
 
 export default NotificationItem;

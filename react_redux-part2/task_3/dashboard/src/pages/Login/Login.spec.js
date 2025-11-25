@@ -1,150 +1,120 @@
-import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/react';
-import userEvent from '@testing-library/user-event'
-import Login from './Login';
-import { configureStore } from '@reduxjs/toolkit';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import userEvent from '@testing-library/user-event';
+import Login from './Login';
 import authReducer from '../../features/auth/authSlice';
 
-
-let store;
-
-beforeEach(() => {
-  store = configureStore({
+const createMockStore = () => {
+  return configureStore({
     reducer: {
-      auth: authReducer,
-    },
-    preloadedState: {
-      auth: {
-        user: { email: '', password: '' },
-        isLoggedIn: false,
-      },
-    },
+      auth: authReducer
+    }
   });
+};
+
+const renderWithRedux = (component) => {
+  const store = createMockStore();
+  return render(
+    <Provider store={store}>
+      {component}
+    </Provider>
+  );
+};
+
+test('testing signin form elements', () => {
+  const { container } = renderWithRedux(<Login />);
+
+  const inputElements = container.querySelectorAll('input[type="email"], input[type="text"], input[type="password"]');
+
+  const emailLabelElement = screen.getByLabelText(/email/i);
+  const passwordLabelElement = screen.getByLabelText(/password/i);
+  const buttonElementText = screen.getByRole('button', { name: 'OK' })
+
+  expect(inputElements.length).toBeGreaterThanOrEqual(2);
+  expect(emailLabelElement).toBeInTheDocument();
+  expect(passwordLabelElement).toBeInTheDocument();
+  expect(buttonElementText).toBeInTheDocument();
 });
 
-afterEach(() => {
-  cleanup();
-});
+test('it should check that the email input element will be focused whenever the associated label is clicked', async () => {
+  renderWithRedux(<Login />)
 
-function renderWithProvider(ui) {
-  return render(<Provider store={store}>{ui}</Provider>);
-}
-
-test('Testing signin form elements', () => {
-  renderWithProvider(<Login />);
-  const emailInput = screen.getByRole('textbox');
-  const passwordInput = screen.getByLabelText(/password/i);
-  const submitButton = screen.getByRole('button', { name: 'OK' });
-  expect(emailInput).toBeInTheDocument();
-  expect(emailInput).toHaveAttribute('type', 'email');
-  expect(screen.getByLabelText(/email/i)).toBe(emailInput);
-  expect(passwordInput).toBeInTheDocument();
-  expect(passwordInput).toHaveAttribute('type', 'password');
-  expect(submitButton).toBeInTheDocument();
-  expect(submitButton).toBeDisabled();
-});
-
-test('Should check that the email input element will be focused whenever the associated label is clicked', async () => {
-  renderWithProvider(<Login />);
   const emailInput = screen.getByLabelText('Email');
   const emailLabel = screen.getByText('Email');
+
   userEvent.click(emailLabel);
+
   await waitFor(() => {
     expect(emailInput).toHaveFocus();
   });
 })
 
-test('Should check that the password input element will be focused whenver the associated label is clicked', async () => {
-  renderWithProvider(<Login />);
+test('it should check that the password input element will be focused whenver the associated label is clicked', async () => {
+  renderWithRedux(<Login />)
+
   const passwordLabel = screen.getByText('Password');
   const passwordInput = screen.getByLabelText('Password');
+
   userEvent.click(passwordLabel);
+
   await waitFor(() => {
     expect(passwordInput).toHaveFocus();
   });
 });
 
-test('Submit button is disabled by default', () => {
-  renderWithProvider(<Login />);
+test('submit button is disabled by default', () => {
+  renderWithRedux(<Login />);
   const submitButton = screen.getByText('OK');
+
   expect(submitButton).toBeDisabled();
 });
 
-test('Submit button is enabled only with a valid email and password of at least 8 characters', () => {
-  renderWithProvider(<Login />);
+test('submit button is enabled only with a valid email and password of at least 8 characters', () => {
+  renderWithRedux(<Login />);
+
   const emailInput = screen.getByLabelText('Email');
   const passwordInput = screen.getByLabelText('Password');
   const submitButton = screen.getByText('OK');
+
   expect(submitButton).toBeDisabled();
+
   fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
   fireEvent.change(passwordInput, { target: { value: '123' } });
   expect(submitButton).toBeDisabled();
+
   fireEvent.change(emailInput, { target: { value: 'test.com' } });
   fireEvent.change(passwordInput, { target: { value: '12345678' } });
   expect(submitButton).toBeDisabled();
+
   fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
   fireEvent.change(passwordInput, { target: { value: '12345678' } });
   expect(submitButton).not.toBeDisabled();
 });
 
-describe('Login Component Tests', () => {
-  test('Should initialize with default email and password', () => {
-    renderWithProvider(<Login />);
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
-    expect(emailInput.value).toBe('');
-    expect(passwordInput.value).toBe('');
-  });
+test('should call logIn function on form submission', () => {
+  const store = createMockStore();
+  const dispatchSpy = jest.spyOn(store, 'dispatch');
 
-  test('Should dispatch login action on valid form submission', () => {
-    renderWithProvider(<Login />);
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
-    const submitButton = screen.getByRole('button', { name: /ok/i });
+  render(
+    <Provider store={store}>
+      <Login />
+    </Provider>
+  );
 
-    fireEvent.change(emailInput, { target: { value: 'test@test.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'password123' } });
-    fireEvent.click(submitButton);
-
-    // Optionnel : tester les effets du dispatch avec `useSelector` ou observer le state
-    const state = store.getState();
-    expect(state.auth.user.email).toBe('test@test.com');
-    expect(state.auth.isLoggedIn).toBe(true);
-  });
-
-  test('Should enable the submit button only with valid email and password', () => {
-    renderWithProvider(<Login />);
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
-    const submitButton = screen.getByRole('button', { name: /ok/i });
-    expect(submitButton).toBeDisabled();
-    fireEvent.change(emailInput, { target: { value: 'valid@test.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'validpassword' } });
-    expect(submitButton).not.toBeDisabled();
-  });
-
-  test('Should update state on email and password input change', () => {
-    renderWithProvider(<Login />);
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
-    fireEvent.change(emailInput, { target: { value: 'newemail@test.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'newpassword' } });
-    expect(emailInput.value).toBe('newemail@test.com');
-    expect(passwordInput.value).toBe('newpassword');
-  });
-
-  test('Should not log in with invalid credentials', () => {
-  renderWithProvider(<Login />);
   const emailInput = screen.getByLabelText(/email/i);
   const passwordInput = screen.getByLabelText(/password/i);
-  const submitButton = screen.getByRole('button', { name: /ok/i });
 
-  fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
-  fireEvent.change(passwordInput, { target: { value: '123' } });
-  
-  fireEvent.click(submitButton);
+  fireEvent.change(emailInput, { target: { value: 'test@test.com' } });
+  fireEvent.change(passwordInput, { target: { value: 'password123' } });
 
-  const state = store.getState();
-  expect(state.auth.isLoggedIn).toBe(false);
-});
+  const form = screen.getByRole('form');
+  fireEvent.submit(form);
+
+  expect(dispatchSpy).toHaveBeenCalledWith(
+    expect.objectContaining({
+      type: 'auth/login',
+      payload: { email: 'test@test.com', password: 'password123' }
+    })
+  );
 });

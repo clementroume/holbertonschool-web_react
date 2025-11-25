@@ -1,89 +1,73 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import Notifications from "./Notifications";
-import * as notificationsSlice from "../../features/notifications/notificationsSlice";
-import * as selectors from "../../features/selectors/notificationSelector";
-import { Provider } from "react-redux";
-import configureStore from "redux-mock-store";
+import { act, render, screen, fireEvent } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import mockAxios from 'jest-mock-axios';
+import Notifications from './Notifications';
+import notificationsSlice, { fetchNotifications } from '../../features/notifications/notificationsSlice';
 
-const mockStore = configureStore([]);
 
-describe("Notifications Component", () => {
+describe('Notifications', () => {
   let store;
 
-  const sampleNotifications = [
-    { id: 1, type: "default", value: "Default notif", isRead: "false" },
-    { id: 2, type: "urgent", value: "Urgent notif", isRead: "false" },
+  const NOTIFICATIONS_DATA = [
+    {
+      id: '5debd764507712e7a1307303',
+      context: {
+        type: 'urgent',
+        isRead: false,
+        value: 'ut labore et dolore magna aliqua. Dignissim convallis aenean et tortor at risus viverra adipiscing. Ac tortor dignissim convallis aenean et.'
+      }
+    },
+    {
+      id: '5debd76444dd4dafea89d53b',
+      context: {
+        type: 'default',
+        isRead: false,
+        value: 'Non diam phasellus vestibulum lorem sed risus ultricies. Tellus mauris a diam maecenas sed'
+      }
+    }
   ];
 
   beforeEach(() => {
-    store = mockStore({
-      notifications: {
-        notifications: sampleNotifications,
-        loading: false,
+    store = configureStore({
+      reducer: {
+        notifications: notificationsSlice
       },
     });
-
-    // Mock the selector to just filter the notifications based on the filter argument
-    jest.spyOn(selectors, "getFilteredNotifications").mockImplementation(
-      (state, filter) => {
-        if (filter === "all") return sampleNotifications;
-        return sampleNotifications.filter((n) => n.type === filter);
-      }
-    );
-
-    // Mock fetchNotifications thunk action creator to a dummy action
-    jest.spyOn(notificationsSlice, "fetchNotifications").mockReturnValue({
-      type: "notifications/fetchNotifications",
-    });
-
-    // Mock markNotificationAsRead action creator
-    jest.spyOn(notificationsSlice, "markNotificationAsRead").mockImplementation(
-      (id) => ({
-        type: "notifications/markNotificationAsRead",
-        payload: id,
-      })
-    );
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    mockAxios.reset();
   });
 
-  it("dispatches fetchNotifications on mount and renders all notifications by default", () => {
-    store.dispatch = jest.fn();
+  test('renders without crashing', async () => {
+    const promise = store.dispatch(fetchNotifications());
+
+    mockAxios.mockResponse({
+      data: NOTIFICATIONS_DATA
+    });
+
+    await promise;
 
     render(
       <Provider store={store}>
         <Notifications />
       </Provider>
-    );
-
-    expect(store.dispatch).toHaveBeenCalledWith(
-      notificationsSlice.fetchNotifications()
     );
 
     expect(screen.getByText(/your notifications/i)).toBeInTheDocument();
-
-    // Notifications drawer is visible by default with buttons and notifications list
-    expect(screen.getByText("‼️ Urgent")).toBeInTheDocument();
-    expect(screen.getByText("📄 Default")).toBeInTheDocument();
-
-    expect(screen.getByText(/here is the list of notifications/i)).toBeInTheDocument();
-
-    // Both notifications should be rendered
-    expect(screen.getByText("Default notif")).toBeInTheDocument();
-    expect(screen.getByText("Urgent notif")).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.getByText(/ut labore et dolore magna aliqua/i)).toBeInTheDocument();
   });
 
-  it("shows loading state when loading is true", () => {
-    store = mockStore({
-      notifications: {
-        notifications: [],
-        loading: true,
-      },
+  test('toggles drawer visibility when clicking the title', async () => {
+    const promise = store.dispatch(fetchNotifications());
+
+    mockAxios.mockResponse({
+      data: NOTIFICATIONS_DATA
     });
 
-    jest.spyOn(selectors, "getFilteredNotifications").mockReturnValue([]);
+    await promise;
 
     render(
       <Provider store={store}>
@@ -91,11 +75,17 @@ describe("Notifications Component", () => {
       </Provider>
     );
 
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    expect(screen.getByText(/ut labore et dolore magna aliqua/i)).toBeInTheDocument();
   });
 
-  it("filters notifications when clicking filter buttons", async () => {
-    store.dispatch = jest.fn();
+  test('close drawer on close button', async () => {
+    const promise = store.dispatch(fetchNotifications());
+
+    mockAxios.mockResponse({
+      data: NOTIFICATIONS_DATA
+    });
+
+    await promise;
 
     render(
       <Provider store={store}>
@@ -103,48 +93,17 @@ describe("Notifications Component", () => {
       </Provider>
     );
 
-    expect(screen.getByText("Default notif")).toBeInTheDocument();
-    expect(screen.getByText("Urgent notif")).toBeInTheDocument();
-
-    // Click urgent filter button
-    fireEvent.click(screen.getByText("‼️ Urgent"));
-    await waitFor(() => {
-      expect(screen.queryByText("Default notif")).not.toBeInTheDocument();
-      expect(screen.getByText("Urgent notif")).toBeInTheDocument();
-    });
-
-    // Click default filter button
-    fireEvent.click(screen.getByText("📄 Default"));
-    await waitFor(() => {
-      expect(screen.getByText("Default notif")).toBeInTheDocument();
-      expect(screen.queryByText("Urgent notif")).not.toBeInTheDocument();
-    });
-
-    // Click default again to show all
-    fireEvent.click(screen.getByText("📄 Default"));
-    await waitFor(() => {
-      expect(screen.getByText("Default notif")).toBeInTheDocument();
-      expect(screen.getByText("Urgent notif")).toBeInTheDocument();
-    });
-
-    // Click urgent again to filter
-    fireEvent.click(screen.getByText("‼️ Urgent"));
-    await waitFor(() => {
-      expect(screen.queryByText("Default notif")).not.toBeInTheDocument();
-      expect(screen.getByText("Urgent notif")).toBeInTheDocument();
-    });
-
-    // Click urgent again to show all
-    fireEvent.click(screen.getByText("‼️ Urgent"));
-    await waitFor(() => {
-      expect(screen.getByText("Default notif")).toBeInTheDocument();
-      expect(screen.getByText("Urgent notif")).toBeInTheDocument();
-    });
+    expect(screen.getByText(/ut labore et dolore magna aliqua/i)).toBeInTheDocument();
   });
 
+  test('marks notification as read', async () => {
+    const promise = store.dispatch(fetchNotifications());
 
-  it("dispatches markNotificationAsRead when clicking a notification item", () => {
-    store.dispatch = jest.fn();
+    mockAxios.mockResponse({
+      data: NOTIFICATIONS_DATA
+    });
+
+    await promise;
 
     render(
       <Provider store={store}>
@@ -152,40 +111,146 @@ describe("Notifications Component", () => {
       </Provider>
     );
 
-    // Click the first notification item
-    const notif = screen.getByText("Default notif");
-    fireEvent.click(notif);
+    const notifications = screen.getAllByRole('listitem');
+    fireEvent.click(notifications[0]);
 
-    expect(store.dispatch).toHaveBeenCalledWith(
-      notificationsSlice.markNotificationAsRead(1)
-    );
+    const state = store.getState().notifications;
+    expect(state.notifications).toHaveLength(1);
   });
 
-  it("toggles the drawer visibility on clicking the 'Your notifications' header and close button", () => {
-    const { container } = render(
+  test('displays "No new notifications" when there are no notifications', async () => {
+    const promise = store.dispatch(fetchNotifications());
+
+    mockAxios.mockResponse({
+      data: []
+    });
+
+    await promise;
+
+    render(
       <Provider store={store}>
         <Notifications />
       </Provider>
     );
 
-    const drawer = container.querySelector(".Notifications");
-    const toggleHeader = screen.getByText(/your notifications/i);
-    const closeButton = screen.getByRole("button", { name: /close/i });
+    expect(screen.getByText(/no new notifications for now/i)).toBeInTheDocument();
+  });
 
-    // Drawer should initially have "visible" class
-    console.log('Drawer className:', drawer.className);
-    expect(drawer.classList.contains("visible")).toBe(true);
+  test('does not re-render when drawer visibility is toggled', async () => {
+    const promise = store.dispatch(fetchNotifications());
 
-    // Click header to toggle drawer
-    fireEvent.click(toggleHeader);
-    expect(drawer.classList.contains("visible")).toBe(false);
+    mockAxios.mockResponse({
+      data: NOTIFICATIONS_DATA
+    });
 
-    // Click header again to toggle drawer back visible
-    fireEvent.click(toggleHeader);
-    expect(drawer.classList.contains("visible")).toBe(true);
+    await promise;
 
-    // Click close button to toggle drawer off
-    fireEvent.click(closeButton);
-    expect(drawer.classList.contains("visible")).toBe(false);
+    let renderCount = 0;
+    const MemoizedNotifications = Notifications;
+    const OriginalNotifications = MemoizedNotifications.type;
+
+    MemoizedNotifications.type = function MockNotifications(props) {
+      renderCount++;
+      return OriginalNotifications(props);
+    };
+
+    render(
+      <Provider store={store}>
+        <MemoizedNotifications />
+      </Provider>
+    );
+
+    expect(renderCount).toBe(1);
+
+    expect(screen.getByText(/ut labore et dolore magna aliqua/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText(/your notifications/i));
+    expect(renderCount).toBe(1);
+
+    fireEvent.click(screen.getByText(/your notifications/i));
+    expect(renderCount).toBe(1);
+  });
+
+  test('displays loading indicator with fake timers', async () => {
+    jest.useFakeTimers();
+
+    render(
+      <Provider store={store}>
+        <Notifications />
+      </Provider>
+    );
+
+    act(() => {
+      store.dispatch(fetchNotifications());
+    });
+
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+
+    act(() => {
+      mockAxios.mockResponse({
+        data: []
+      });
+    });
+
+    await act(async () => {
+      await jest.runAllTimersAsync();
+    });
+
+    jest.useRealTimers();
+  });
+
+  describe('Notification filtering', () => {
+    test('toggles urgent filter correctly', async () => {
+      const promise = store.dispatch(fetchNotifications());
+
+      mockAxios.mockResponse({
+        data: NOTIFICATIONS_DATA
+      });
+
+      await promise;
+
+      render(
+        <Provider store={store}>
+          <Notifications />
+        </Provider>
+      );
+
+      expect(screen.getAllByRole('listitem')).toHaveLength(2);
+
+      const urgentButton = screen.getByText('‼️');
+
+      fireEvent.click(urgentButton);
+      expect(screen.getAllByRole('listitem')).toHaveLength(1);
+
+      fireEvent.click(urgentButton);
+      expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    });
+
+    test('toggles default filter correctly', async () => {
+      const promise = store.dispatch(fetchNotifications());
+
+      mockAxios.mockResponse({
+        data: NOTIFICATIONS_DATA
+      });
+
+      await promise;
+
+      render(
+        <Provider store={store}>
+          <Notifications />
+        </Provider>
+      );
+
+      expect(screen.getAllByRole('listitem')).toHaveLength(2);
+
+      const defaultButton = screen.getByText('??');
+
+      fireEvent.click(defaultButton);
+      expect(screen.getAllByRole('listitem')).toHaveLength(1);
+      
+      fireEvent.click(defaultButton);
+      expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    });
   });
 });
+

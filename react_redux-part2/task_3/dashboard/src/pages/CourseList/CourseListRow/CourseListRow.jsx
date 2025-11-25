@@ -1,47 +1,43 @@
-import './CourseListRow.css';
+import { StyleSheet, css } from 'aphrodite';
 
-function CourseListRow({
+const styles = StyleSheet.create({
+  headerRow: {
+    backgroundColor: '#deb5b545'
+  },
+  row: {
+    backgroundColor: '#f5f5f5ab'
+  }
+});
+
+export default function CourseListRow({ 
+  isHeader = false, 
+  textFirstCell = '', 
+  textSecondCell = null,
+  isSelected = false,
+  onChangeRow = () => {},
   id,
-  isHeader,
-  textFirstCell,
-  textSecondCell,
-  style,
-  isChecked,
-  onChange,
 }) {
-  const cellClass = style?.className || 'course-cell';
 
-  if (isHeader) {
-    if (textSecondCell === null || textSecondCell === undefined) {
-      return (
-        <tr>
-          <th className={cellClass} colSpan="2">{textFirstCell}</th>
-        </tr>
-      );
-    } else {
-      return (
-        <tr>
-          <th className={cellClass}>{textFirstCell}</th>
-          <th className={cellClass}>{textSecondCell}</th>
-        </tr>
-      );
-    }
-  } else {
-    return (
-      <tr>
-        <td className={cellClass}>
+  const rowStyle = isHeader ? styles.headerRow : styles.row;
+
+  return (
+    isHeader ? (
+      <tr className={css(rowStyle)}>
+        <th colSpan={textSecondCell ? 1 : 2}>{textFirstCell}</th>
+        {textSecondCell ? <th>{textSecondCell}</th> : null}
+      </tr>
+    ) : (
+      <tr className={css(rowStyle)}>
+        <td>
           <input
             type="checkbox"
-            checked={isChecked}
-            onChange={(e) => onChange?.(id, e.target.checked)}
-            style={{ marginRight: '8px' }}
+            checked={isSelected}
+            onChange={(e) => onChangeRow(id, e.target.checked)}
           />
           {textFirstCell}
         </td>
-        <td className={cellClass}>{textSecondCell}</td>
+        <td>{textSecondCell}</td>
       </tr>
-    );
-  }
+    )
+  )
 }
-
-export default CourseListRow;

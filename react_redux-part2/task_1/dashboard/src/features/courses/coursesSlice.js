@@ -1,7 +1,6 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { logout } from '../auth/authSlice';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-
+import { logout } from '../auth/authSlice';
 
 const initialState = {
   courses: [],
@@ -9,32 +8,31 @@ const initialState = {
 
 const API_BASE_URL = 'http://localhost:5173';
 const ENDPOINTS = {
-    courses: `${API_BASE_URL}/courses.json`,
+  courses: `${API_BASE_URL}/courses.json`,
 };
 
 export const fetchCourses = createAsyncThunk(
   'courses/fetchCourses',
   async () => {
-    try {
-      const response = await axios.get(ENDPOINTS.courses);
-      return response.data.courses;
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-      throw error;
-    }
+    const response = await axios.get(ENDPOINTS.courses);
+    return response.data.courses;
   }
-)
+);
 
-export const coursesSlice = createSlice({
+const coursesSlice = createSlice({
   name: 'courses',
   initialState,
+  reducers: {},
   extraReducers: (builder) => {
-      builder
-        .addCase(fetchCourses.fulfilled, (state, action) =>{
-          state.courses = action.payload;
-        })
-        .addCase(logout.type, () => initialState);
-    }
-})
+    builder
+      .addCase(fetchCourses.fulfilled, (state, action) => {
+        state.courses = action.payload;
+      })
+      .addCase(logout, (state) => {
+        state.courses = initialState.courses;
+      });
+  },
+});
 
 export default coursesSlice.reducer;
+ 

@@ -1,53 +1,59 @@
-import { memo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { markNotificationAsRead } from '../../features/notifications/notificationsSlice';
+import { memo } from "react";
+import { StyleSheet, css } from "aphrodite";
 
-const NotificationItem = memo(function NotificationItem({ id }) {
-    const dispatch = useDispatch();
-    const notification = useSelector((state) =>
-        state.notifications.notifications.find((notif) => notif.id === id)
-    );
-    if (!notification)
-        return null;
+const styles = StyleSheet.create({
+  default: {
+    color: "blue",
+    "@media (max-width: 900px)": {
+      width: "100%",
+      borderBottom: "1px solid black",
+      fontSize: "20px",
+      padding: "10px 8px",
+      listStyle: "none",
+    },
+  },
+  urgent: {
+    color: "red",
+    "@media (max-width: 900px)": {
+      width: "100%",
+      borderBottom: "1px solid black",
+      fontSize: "20px",
+      padding: "10px 8px",
+      listStyle: "none",
+    },
+  },
+});
 
-    const { type, value, html } = notification;
-
-    const handleClick = () => {
-        dispatch(markNotificationAsRead(id));
-    };
-
-    if (type === 'default') {
-        return (
-            <li
-                style={{ color: "blue" }}
-                data-notification-type={type}
-                onClick={handleClick}
-            >
-                {value}
-            </li>
-        );
-    }
-
-    if (type === 'urgent' && html !== undefined) {
-        return (
-            <li
-                style={{ color: "red" }}
-                data-notification-type={type}
-                dangerouslySetInnerHTML={html}
-                onClick={handleClick}
-            />
-        );
-    }
-
+const NotificationItem = memo(function NotificationItem({
+  type,
+  html,
+  value,
+  markAsRead,
+  id,
+}) {
+  const itemStyle = type === "default" ? styles.default : styles.urgent;
+  // this console.log is only for test purposes and not mentionned/required in the student code
+  // console.log(`Rendering NotificationItem with id: ${id}, type: ${type}, value: ${value}`);
+  if (html !== undefined) {
     return (
-        <li
-            style={{ color: "red" }}
-            data-notification-type={type}
-            onClick={handleClick}
-        >
-            {value}
-        </li>
+      <li
+        className={css(itemStyle)}
+        data-notification-type={type}
+        dangerouslySetInnerHTML={html}
+        onClick={() => markAsRead(id)}
+      ></li>
     );
+  } else {
+    return (
+      <li
+        className={css(itemStyle)}
+        data-notification-type={type}
+        onClick={() => markAsRead(id)}
+      >
+        {value}
+      </li>
+    );
+  }
 });
 
 export default NotificationItem;

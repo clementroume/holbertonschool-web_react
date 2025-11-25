@@ -1,156 +1,107 @@
-import { render, screen } from '@testing-library/react';
-import CourseList from './CourseList';
-import { StyleSheetTestUtils } from 'aphrodite';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer from '../../features/auth/authSlice';
-import coursesReducer from '../../features/courses/coursesSlice';
-import notificationsReducer from '../../features/notifications/notificationsSlice';
-import * as courseSlice from '../../features/courses/coursesSlice';
+import mockAxios from 'jest-mock-axios';
+import CourseList from './CourseList';
+import coursesSlice, { fetchCourses } from '../../features/courses/coursesSlice';
 
-beforeEach(() => {
-  StyleSheetTestUtils.suppressStyleInjection();
-});
+describe('CourseList', () => {
+  const COURSES_DATA = [
+    { id: 1, name: 'ES6', credit: 60 },
+    { id: 2, name: 'Webpack', credit: 20 },
+    { id: 3, name: 'React', credit: 40 }
+  ];
 
-afterEach(() => {
-  StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
-});
+  let store;
 
-
-function renderWithProvider(ui, preloadedState = {}) {
-  const store = configureStore({
-    reducer: {
-      auth: authReducer,
-      courses: coursesReducer,
-      notifications: notificationsReducer,
-    },
-    preloadedState,
+  beforeEach(() => {
+    store = configureStore({
+      reducer: {
+        courses: coursesSlice,
+      },
+    });
   });
 
-  return render(<Provider store={store}>{ui}</Provider>);
-}
-
-jest.spyOn(courseSlice, 'fetchCourses').mockImplementation(() => () => {});
-
-test('renders without crashing', async () => {
-  const preloadedState = {
-    auth: {
-      user: {
-        email: 'test@example.com',
-        password: '12345678',
-      },
-      isLoggedIn: true,
-    },
-    courses: {
-      courses: [
-        { id: 1, name: 'ES6', credit: 60 },
-        { id: 2, name: 'WebPack', credit: 20 },
-        { id: 3, name: 'React', credit: 40 },
-      ]
-    }
-  }
-  renderWithProvider(<CourseList />, preloadedState);
-  const title = await screen.findByText(/Available courses/i);
-  expect(title).toBeInTheDocument();
-});
-
-test('renders correct number of rows when courses are available', async () => {
-  const preloadedState = {
-    auth: {
-      user: {
-        email: 'test@example.com',
-        password: '12345678',
-      },
-      isLoggedIn: true,
-    },
-    courses: {
-      courses: [
-        { id: 1, name: 'ES6', credit: 60 },
-        { id: 2, name: 'WebPack', credit: 20 },
-        { id: 3, name: 'React', credit: 40 },
-      ]
-    }
-  }
-  renderWithProvider(<CourseList />, preloadedState);
-  const rows = await screen.findAllByRole('row');
-  expect(rows).toHaveLength(5);
-});
-
-test('renders fallback when no courses available', () => {
-  const preloadedState = {
-    auth: {
-      user: {
-        email: 'test@example.com',
-        password: '12345678',
-      },
-      isLoggedIn: true,
-    },
-    courses: {
-      courses: []
-    }
-  }
-
-  renderWithProvider(<CourseList />, preloadedState);
-
-  const noCoursesRow = screen.getByText(/no course available yet/i);
-  expect(noCoursesRow).toBeInTheDocument();
-});
-
-import { logout } from '../../features/auth/authSlice';
-
-test('dispatching logout resets courses array', () => {
-  const store = configureStore({
-    reducer: {
-      auth: authReducer,
-      courses: coursesReducer,
-      notifications: notificationsReducer,
-    },
-    preloadedState: {
-      auth: {
-        user: { email: 'test@example.com', password: '12345678' },
-        isLoggedIn: true,
-      },
-      courses: {
-        courses: [
-          { id: 1, name: 'ES6', credit: 60 },
-          { id: 2, name: 'WebPack', credit: 20 },
-        ],
-      },
-    },
+  afterEach(() => {
+    mockAxios.reset();
   });
 
-  store.dispatch(logout());
-
-  render(
-    <Provider store={store}>
-      <CourseList />
-    </Provider>
-  );
-
-  const noCoursesRow = screen.getByText(/no course available yet/i);
-  expect(noCoursesRow).toBeInTheDocument();
-});
-
-test('dispatching logout resets courses array in the store', () => {
-  const store = configureStore({
-    reducer: { auth: authReducer, courses: coursesReducer, notifications: notificationsReducer },
-    preloadedState: {
-      auth: { user: { email: 'test@example.com', password: '12345678' }, isLoggedIn: true },
-      courses: { courses: [ { id: 1, name: 'ES6', credit: 60 }, { id: 2, name: 'WebPack', credit: 20 } ] }
-    }
+  test('renders without crashing', () => {
+    render(
+      <Provider store={store}>
+        <CourseList />
+      </Provider>
+    );
+    expect(screen.getByText('No course available yet')).toBeInTheDocument();
   });
 
-  expect(store.getState().courses.courses).toHaveLength(2);
+  test('displays the list of courses', async () => {
+    const promise = store.dispatch(fetchCourses());
 
-  store.dispatch(logout());
+    mockAxios.mockResponse({
+      data: {
+        courses: COURSES_DATA
+      }
+    });
 
-  expect(store.getState().courses.courses).toHaveLength(0);
+    await promise;
 
-  render(
-    <Provider store={store}>
-      <CourseList />
-    </Provider>
-  );
+    render(
+      <Provider store={store}>
+        <CourseList />
+      </Provider>
+    );
 
-  expect(screen.getByText(/no course available yet/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('ES6')).toBeInTheDocument();
+      expect(screen.getByText('Webpack')).toBeInTheDocument();
+      expect(screen.getByText('React')).toBeInTheDocument();
+    });
+  });
+
+  test('select and unselect a course when the checkbox is clicked', async () => {
+    const promise = store.dispatch(fetchCourses());
+
+    mockAxios.mockResponse({
+      data: {
+        courses: COURSES_DATA
+      }
+    });
+
+    await promise;
+
+    render(
+      <Provider store={store}>
+        <CourseList />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('checkbox')).toHaveLength(COURSES_DATA.length);
+    });
+
+    const rows = screen.getAllByRole('row').filter(row => {
+      return !row.querySelector('th');
+    });
+
+    expect(rows).toHaveLength(COURSES_DATA.length);
+
+    const firstCell = within(rows[0]).getAllByRole('cell');
+
+    const checkbox = within(firstCell[0]).getByRole('checkbox');
+
+    expect(checkbox).not.toBeChecked();
+
+    fireEvent.click(checkbox);
+    await waitFor(() => {
+      expect(store.getState().courses.courses[0].isSelected).toBe(true);
+      expect(checkbox).toBeChecked();
+    });
+
+    fireEvent.click(checkbox);
+    await waitFor(() => {
+      expect(store.getState().courses.courses[0].isSelected).toBe(false);
+      expect(checkbox).not.toBeChecked();
+    });
+  });
 });

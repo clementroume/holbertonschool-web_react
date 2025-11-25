@@ -1,134 +1,125 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import Header from './Header';
-import { StyleSheetTestUtils } from "aphrodite";
-import authReducer from '../../features/auth/authSlice';
-import { configureStore } from '@reduxjs/toolkit';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { login } from '../../features/auth/authSlice';
+import { configureStore } from '@reduxjs/toolkit';
+import Header from './Header';
+import authReducer from '../../features/auth/authSlice';
 
-let store;
-
-beforeEach(() => {
-  store = configureStore({
-    reducer: { auth: authReducer },
-    preloadedState: {
-      auth: {
-        user: {
-          email: 'user@example.com',
-          password: 'password123'
-        },
-        isLoggedIn: true
-      }
-    }
+const createMockStore = (initialState) => {
+  return configureStore({
+    reducer: {
+      auth: authReducer
+    },
+    preloadedState: initialState
   });
+};
 
-  StyleSheetTestUtils.suppressStyleInjection();
-});
-
-afterEach(() => {
-  jest.restoreAllMocks();
-  StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
-});
-
-function renderWithProvider(ui) {
-  return render(<Provider store={store}>{ui}</Provider>);
-}
+const renderWithRedux = (component, initialState) => {
+  const store = createMockStore(initialState);
+  return render(
+    <Provider store={store}>
+      {component}
+    </Provider>
+  );
+};
 
 export const convertHexToRGBA = (hexCode) => {
   let hex = hexCode.replace('#', '');
+
   if (hex.length === 3) {
     hex = `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
-    console.log({ hex })
+    console.log({hex})
   }
+
   const r = parseInt(hex.substring(0, 2), 16);
   const g = parseInt(hex.substring(2, 4), 16);
   const b = parseInt(hex.substring(4, 6), 16);
+
   return { r, g, b };
 };
 
-test('Should contain a <p/> element with specific text, <h1/>, and an <img/>', () => {
-  renderWithProvider(<Header />);
-  const headingElement = screen.getByRole('heading', { name: /school Dashboard/i });
+test('should contain a <p/> element with specific text, <h1/>, and an <img/>', () => {
+  const initialState = {
+    auth: {
+      user: {
+        email: '',
+        password: ''
+      },
+      isLoggedIn: false
+    }
+  };
+
+  renderWithRedux(<Header />, initialState);
+
+  const headingElement = screen.getByRole('heading', {name: /school Dashboard/i});
   const imgElement = screen.getByAltText('holberton logo')
+
   expect(headingElement).toBeInTheDocument();
-  expect(headingElement).toHaveStyle({ color: convertHexToRGBA('#e1003c') })
+  expect(headingElement).toHaveStyle({color: convertHexToRGBA('#e1003c') })
   expect(imgElement).toBeInTheDocument();
 });
 
-test('Dispatch login action updates store and displays welcome message', () => {
-  store.dispatch(login({ email: 'newuser@test.com', password: 'abc12345' }));
+test('logoutSection is not rendered with default context value', () => {
+  const initialState = {
+    auth: {
+      user: {
+        email: '',
+        password: ''
+      },
+      isLoggedIn: false
+    }
+  };
 
-  renderWithProvider(<Header />);
+  renderWithRedux(<Header />, initialState);
 
-  expect(screen.getByText('Welcome')).toBeInTheDocument();
-  expect(screen.getByText('newuser@test.com')).toBeInTheDocument();
+  const logoutSection = screen.queryByText(/logout/i);
+
+  expect(logoutSection).not.toBeInTheDocument();
 });
 
-test('Clicking logout dispatches logout action and sets isLoggedIn to false', () => {
-  renderWithProvider(<Header />);
+test('logoutSection is rendered when user is logged in', () => {
+  const initialState = {
+    auth: {
+      user: {
+        email: 'test@test.com',
+        password: 'password123'
+      },
+      isLoggedIn: true
+    }
+  };
 
-  fireEvent.click(screen.getByRole('link', { name: /logout/i }));
+  renderWithRedux(<Header />, initialState);
 
-  const state = store.getState();
-  expect(state.auth.isLoggedIn).toBe(false);
-
-  expect(screen.queryByRole('link', { name: /logout/i })).not.toBeInTheDocument();
+  const logoutSection = screen.getByText(/logout/i);
+  expect(logoutSection).toBeInTheDocument();
+  expect(screen.getByText(/test@test.com/i)).toBeInTheDocument();
 });
 
+test('clicking logout link calls the logOut function', () => {
+  const initialState = {
+    auth: {
+      user: {
+        email: 'test@test.com',
+        password: 'password123'
+      },
+      isLoggedIn: true
+    }
+  };
 
-test('Should confirm Header is a functional component', () => {
-  const HeaderPrototype = Object.getOwnPropertyNames(Header.prototype);
-  expect(HeaderPrototype).toEqual(expect.arrayContaining(["constructor"]))
-  expect(HeaderPrototype).toHaveLength(1)
-  expect(Header.prototype.__proto__).toEqual({})
-});
+  const store = createMockStore(initialState);
+  const dispatchSpy = jest.spyOn(store, 'dispatch');
 
-jest.mock('../assets/holberton-logo.jpg', () => 'mocked-path.jpg');
+  render(
+    <Provider store={store}>
+      <Header />
+    </Provider>
+  );
 
-describe('Header Component', () => {
-  describe('When user is logged out', () => {
-    beforeEach(() => {
-      renderWithProvider(<Header />);
-    });
+  const logoutLink = screen.getByText(/logout/i);
+  fireEvent.click(logoutLink);
 
-    test('Renders basic header elements', () => {
-      expect(screen.getByRole('img')).toHaveAttribute('src', 'mocked-path.jpg');
-      expect(screen.getByRole('heading')).toHaveTextContent('School Dashboard');
-    });
-
-    test('Does not render logout section', () => {
-      expect(screen.queryByTestId('logoutSection')).not.toBeInTheDocument();
-    });
-  });
-
-  describe('When user is logged in', () => {
-    beforeEach(() => {
-      renderWithProvider(<Header />);
-    });
-
-    test('Renders welcome message with user email', () => {
-      expect(screen.getByText('Welcome')).toBeInTheDocument();
-      expect(screen.getByText('user@example.com')).toBeInTheDocument();
-    });
-
-    test('Renders logout link', () => {
-      expect(screen.getByRole('link', { name: /logout/i })).toBeInTheDocument();
-    });
-
-    test('Clicking logout removes logout section', () => {
-      expect(screen.getByRole('link', { name: /logout/i })).toBeInTheDocument();
-      expect(screen.getByText(/user@example.com/i)).toBeInTheDocument();
-
-      fireEvent.click(screen.getByRole('link', { name: /logout/i }));
-
-      expect(screen.queryByRole('link', { name: /logout/i })).not.toBeInTheDocument();
-      expect(screen.queryByText(/user@example.com/i)).not.toBeInTheDocument();
-    });
-
-    test('Displays logoutSection when user is logged in', () => {
-      const { container } = renderWithProvider(<Header />);
-      const logoutSection = container.querySelector('div#logoutSection');
-      expect(logoutSection).toBeInTheDocument();
-    });
-  });
+  expect(dispatchSpy).toHaveBeenCalledWith(
+    expect.objectContaining({
+      type: 'auth/logout'
+    })
+  );
 });

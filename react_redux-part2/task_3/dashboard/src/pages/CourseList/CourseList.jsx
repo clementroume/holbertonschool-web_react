@@ -1,63 +1,68 @@
-import { useSelector, useDispatch } from 'react-redux';
 import CourseListRow from './CourseListRow/CourseListRow';
+import { useDispatch, useSelector } from 'react-redux';
 import WithLogging from '../../components/HOC/WithLogging';
 import { selectCourse, unSelectCourse } from '../../features/courses/coursesSlice';
-import './CourseList.css';
+import { StyleSheet, css } from 'aphrodite';
+
+const styles = StyleSheet.create({
+  courses: {
+    margin: '130px auto',
+    width: '90%',
+    height: '33vh'
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    border: '2px solid rgb(161, 161, 161)',
+    ':nth-child(1n) th': {
+      border: '2px solid rgb(161, 161, 161)'
+    },
+    ':nth-child(1n) tr': {
+      border: '2px solid rgb(161, 161, 161)'
+    },
+    ':nth-child(1n) td': {
+      border: '2px solid rgb(161, 161, 161)'
+    }
+  }
+});
 
 function CourseList() {
+  const { courses } = useSelector((state) => state.courses);
   const dispatch = useDispatch();
-  const courses = useSelector((state) => state.courses.courses);
 
   const onChangeRow = (id, checked) => {
-    if (checked) {
-      dispatch(selectCourse(id));
-    } else {
-      dispatch(unSelectCourse(id));
-    }
+    const action = checked ? selectCourse : unSelectCourse;
+    dispatch(action(id));
   };
 
   return (
-    <div className="course-list-container">
-      <table id="CourseList" className="course-table">
-        <thead>
-          {courses.length > 0 ? (
-            <>
-              <CourseListRow
-                textFirstCell="Available courses"
-                isHeader={true}
-                style={{ className: 'course-thtd' }}
-              />
-              <CourseListRow
-                textFirstCell="Course name"
-                textSecondCell="Credit"
-                isHeader={true}
-                style={{ className: 'course-thtd' }}
-              />
-            </>
-          ) : (
-            <CourseListRow
-              isHeader={true}
-              textFirstCell="No course available yet"
-              style={{ className: 'course-thtd' }}
-            />
-          )}
-        </thead>
-        {courses.length > 0 && (
+    <div className={css(styles.courses)}>
+      {courses.length > 0 ? (
+        <table id="CourseList" className={css(styles.table)}>
+          <thead>
+            <CourseListRow textFirstCell="Available courses" isHeader={true} />
+            <CourseListRow textFirstCell="Course name" textSecondCell="Credit" isHeader={true} />
+          </thead>
           <tbody>
             {courses.map((course) => (
-              <CourseListRow
+              <CourseListRow 
                 key={course.id}
                 id={course.id}
-                textFirstCell={course.name}
+                textFirstCell={course.name} 
                 textSecondCell={course.credit}
-                isChecked={course.isSelected}
-                onChange={onChangeRow}
-                style={{ className: 'course-thtd' }}
+                onChangeRow={onChangeRow}
+                isSelected={course.isSelected || false}
               />
             ))}
           </tbody>
-        )}
-      </table>
+        </table>
+      ) : (
+        <table id="CourseList" className={css(styles.table)}>
+          <thead>
+            <CourseListRow isHeader={true} textFirstCell="No course available yet" />
+          </thead>
+        </table>
+      )}
     </div>
   );
 }

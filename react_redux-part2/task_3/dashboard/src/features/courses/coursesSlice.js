@@ -1,6 +1,6 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { logout } from '../auth/authSlice';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { logout } from '../auth/authSlice';
 
 const initialState = {
   courses: [],
@@ -14,45 +14,37 @@ const ENDPOINTS = {
 export const fetchCourses = createAsyncThunk(
   'courses/fetchCourses',
   async () => {
-    try {
-      const response = await axios.get(ENDPOINTS.courses);
-      return response.data.courses;
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-      throw error;
-    }
+    const response = await axios.get(ENDPOINTS.courses);
+    return response.data.courses;
   }
 );
 
-export const coursesSlice = createSlice({
+const coursesSlice = createSlice({
   name: 'courses',
   initialState,
   reducers: {
-    selectCourse: (state, action) => {
-      const course = state.courses.find(course => course.id === action.payload);
-      if (course) {
-        course.isSelected = true;
-      }
+    selectCourse: (state, { payload }) => {
+      const course = state.courses.find(c => c.id === payload);
+      if (course) course.isSelected = true;
     },
-    unSelectCourse: (state, action) => {
-      const course = state.courses.find(course => course.id === action.payload);
-      if (course) {
-        course.isSelected = false;
-      }
-    },
+    unSelectCourse: (state, { payload }) => {
+      const course = state.courses.find(c => c.id === payload);
+      if (course) course.isSelected = false;
+    }
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchCourses.fulfilled, (state, action) => {
-        state.courses = action.payload.map(course => ({
+        state.courses = action.payload.map((course) => ({
           ...course,
           isSelected: false,
         }));
       })
-      .addCase(logout.type, () => initialState);
+      .addCase(logout, (state) => {
+        state.courses = initialState.courses;
+      });
   },
 });
 
 export const { selectCourse, unSelectCourse } = coursesSlice.actions;
-
 export default coursesSlice.reducer;

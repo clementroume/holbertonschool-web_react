@@ -1,53 +1,155 @@
-import coursesReducer, { fetchCourses } from '../courses/coursesSlice';
-import axios from 'axios';
-import MockAdapter from 'axios-mock-adapter';
-import { configureStore } from '@reduxjs/toolkit';
+import coursesSlice, { fetchCourses, selectCourse, unSelectCourse } from '../courses/coursesSlice';
 import { logout } from '../auth/authSlice';
+import mockAxios from 'jest-mock-axios';
 
-const ENDPOINTS = {
-  courses: 'http://localhost:5173/courses.json',
-};
+describe('coursesSlice', () => {
+  const initialState = {
+    courses: [],
+  };
 
-const mockData = [
-  { "id": 1, "name": "ES6", "credit": 60, "isSelected": false},
-  { "id": 2, "name": "Webpack", "credit": 20, "isSelected": false},
-  { "id": 3, "name": "React", "credit": 40, "isSelected": false},
-];
-
-const prevState = {
-  courses: [{ id: 1, name: 'ES6', credit: 60}],
-};
-
-let mock;
-
-beforeEach(() => {
-  mock = new MockAdapter(axios);
-})
-
-afterEach(() => {
-  mock.restore();
-})
-
-describe('courseSlice', () => {
-  it('should return the initial state by default', () => {
-    expect(
-      coursesReducer(undefined, { type: undefined })).toEqual({ courses: [] }
-      );
+  afterEach(() => {
+    mockAxios.reset();
   });
 
-  it('should fetch courses data and update the state', async () => {
-    const mockCourses = mockData;
-    mock.onGet(ENDPOINTS.courses).reply(200, { courses: mockCourses });
-
-    const store = configureStore({ reducer: { courses: coursesReducer }});
-    await store.dispatch(fetchCourses());
-
-    const state = store.getState().courses;
-    expect(state.courses).toEqual(mockCourses);
+  test('should return the initial state', () => {
+    expect(coursesSlice(undefined, { type: 'unknown' })).toEqual(
+      initialState
+    );
   });
 
-  it('should reset courses array to empty on logout', () => {
-    const nextState = coursesReducer(prevState, logout());
-    expect(nextState.courses).toEqual([]);
+  describe('fetchCourses async thunk', () => {
+    test('should handle fetchCourses.pending', () => {
+      const action = { type: fetchCourses.pending.type };
+      const state = coursesSlice(initialState, action);
+      expect(state).toEqual({
+        ...initialState,
+      });
+    });
+
+    test('should handle fetchCourses.rejected', () => {
+      const action = {
+        type: fetchCourses.rejected.type,
+      };
+      const state = coursesSlice(initialState, action);
+      expect(state).toEqual({
+        ...initialState,
+      });
+    });
+
+    test('test courses', async () => {
+      const coursesData = [
+        { "id": 1, "name": "ES6", "credit": 60 },
+        { "id": 2, "name": "Webpack", "credit": 20 },
+        { "id": 3, "name": "React", "credit": 40 }
+      ];
+
+      const dispatch = jest.fn();
+      const getState = jest.fn();
+
+      const promise = fetchCourses()(dispatch, getState, null);
+
+      mockAxios.mockResponse({
+        data: { courses: coursesData }
+      });
+
+      await promise;
+
+      expect(dispatch).toHaveBeenCalledTimes(2);
+
+      const fulfilledAction = dispatch.mock.calls[1][0];
+
+      expect(fulfilledAction.type).toEqual(fetchCourses.fulfilled.type);
+      expect(fulfilledAction.payload).toEqual(coursesData);
+    });
   });
-})
+
+  describe('logout action', () => {
+    test('should reset courses array on logout', () => {
+      const stateWithCourses = {
+        courses: [
+          { id: 1, title: 'Introduction to Programming' },
+          { id: 2, title: 'Advanced Mathematics' },
+        ],
+      };
+
+      const action = { type: logout.type };
+      const state = coursesSlice(stateWithCourses, action);
+
+      expect(state).toEqual({
+        courses: [],
+      });
+    });
+  });
+
+  describe('selectCourse and unSelectCourse actions', () => {
+    test('should handle selectCourse', () => {
+      const stateWithCourses = {
+        courses: [
+          { id: 1, name: 'ES6', credit: 60, isSelected: false },
+          { id: 2, name: 'Webpack', credit: 20, isSelected: false },
+          { id: 3, name: 'React', credit: 40, isSelected: false },
+        ],
+      };
+
+      const action = selectCourse(2);
+      const state = coursesSlice(stateWithCourses, action);
+
+      expect(state.courses).toEqual([
+        { id: 1, name: 'ES6', credit: 60, isSelected: false },
+        { id: 2, name: 'Webpack', credit: 20, isSelected: true },
+        { id: 3, name: 'React', credit: 40, isSelected: false },
+      ]);
+    });
+
+    test('should handle unSelectCourse', () => {
+      const stateWithCourses = {
+        courses: [
+          { id: 1, name: 'ES6', credit: 60, isSelected: false },
+          { id: 2, name: 'Webpack', credit: 20, isSelected: true },
+          { id: 3, name: 'React', credit: 40, isSelected: false },
+        ],
+      };
+
+      const action = unSelectCourse(2);
+      const state = coursesSlice(stateWithCourses, action);
+
+      expect(state.courses).toEqual([
+        { id: 1, name: 'ES6', credit: 60, isSelected: false },
+        { id: 2, name: 'Webpack', credit: 20, isSelected: false },
+        { id: 3, name: 'React', credit: 40, isSelected: false },
+      ]);
+    });
+
+    test('should handle selectCourse for non-existent course', () => {
+      const stateWithCourses = {
+        courses: [
+          { id: 1, name: 'ES6', credit: 60, isSelected: false },
+        ],
+      };
+
+      const action = selectCourse(999);
+      const state = coursesSlice(stateWithCourses, action);
+
+      expect(state.courses).toEqual([
+        { id: 1, name: 'ES6', credit: 60, isSelected: false },
+      ]);
+    });
+
+    test('should add isSelected property to courses on fetchCourses.fulfilled', () => {
+      const action = {
+        type: fetchCourses.fulfilled.type,
+        payload: [
+          { id: 1, name: 'ES6', credit: 60 },
+          { id: 2, name: 'Webpack', credit: 20 },
+        ],
+      };
+
+      const state = coursesSlice(initialState, action);
+
+      expect(state.courses).toEqual([
+        { id: 1, name: 'ES6', credit: 60, isSelected: false },
+        { id: 2, name: 'Webpack', credit: 20, isSelected: false },
+      ]);
+    });
+  });
+});
