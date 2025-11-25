@@ -1,19 +1,27 @@
-export default function CourseListRow({
-    isHeader = false,
-    textFirstCell = '',
-    textSecondCell = null
-}) {
+function CourseListRow({ isHeader, textFirstCell, textSecondCell }) {
+  if (isHeader) {
+    if (textSecondCell === null || textSecondCell === undefined) {
+      return (
+        <tr>
+          <th>{textFirstCell}</th>
+        </tr>
+      );
+    } else {
+      return (
+        <tr>
+          <th>{textFirstCell}</th>
+          <th>{textSecondCell}</th>
+        </tr>
+      );
+    }
+  } else {
     return (
-        isHeader ? (
-            <tr>
-                <th colSpan={textSecondCell ? 1 : 2}>{textFirstCell}</th>
-                {textSecondCell ? <th>{textSecondCell}</th> : null}
-            </tr>
-        ) : (
-            <tr>
-                <td>{textFirstCell}</td>
-                <td>{textSecondCell}</td>
-            </tr>
-        )
-    )
-};
+      <tr>
+        <td>{textFirstCell}</td>
+        <td>{textSecondCell}</td>
+      </tr>
+    );
+  }
+}
+
+export default CourseListRow;

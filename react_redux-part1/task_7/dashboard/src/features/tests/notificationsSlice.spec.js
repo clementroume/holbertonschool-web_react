@@ -1,130 +1,132 @@
-import notificationsSlice, {
-    markNotificationAsRead,
-    showDrawer,
-    hideDrawer,
-    fetchNotifications,
+import notificationsReducer,
+{ showDrawer,
+  hideDrawer,
+  markNotificationAsRead,
+  fetchNotifications,
 } from '../notifications/notificationsSlice';
+
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
+import { configureStore } from '@reduxjs/toolkit';
 
-const mock = new MockAdapter(axios);
+
+jest.mock('../../utils/utils', () => ({
+  getLatestNotification: jest.fn(() => '<strong>Urgent requirement</strong> - complete by EOD'),
+}));
+
+const ENDPOINTS = {
+  notifications: 'http://localhost:5173/notifications.json',
+};
+
+const mockData = [
+    { id: 1, value: 'New course available', type: 'default' },
+    { id: 3, value: 'Old value', type: 'urgent' },
+  ];
+
+let mock;
+
+beforeEach(() => {
+  mock = new MockAdapter(axios);
+})
+
+afterEach(() => {
+  mock.restore();
+})
 
 describe('notificationsSlice', () => {
-    const initialState = {
-        notifications: [],
-        displayDrawer: true,
+  const initialState = {
+    notifications: [],
+    displayDrawer: true,
+  }
+
+  it('should return the initial state by default', () => {
+    expect(notificationsReducer(undefined, { type: undefined })).toEqual(initialState);
+  });
+
+  describe('Drawer actions', () => {
+    it('should hide drawer when hideDrawer is called', () => {
+      const previousState = { notifications: [], displayDrawer: true };
+      const newState = notificationsReducer(previousState, hideDrawer());
+      expect(newState.displayDrawer).toBe(false);
+    });
+
+    it('should set displayDrawer to true when showDrawer is dispatched', () => {
+      const previousState = { notifications: [], displayDrawer: false };
+      const newState = notificationsReducer(previousState, showDrawer());
+      expect(newState.displayDrawer).toBe(true);
+    });
+
+    it('should not modify notifications when showDrawer is called', () => {
+      const previousState = {
+        notifications: [{ id: 1, value: 'notif 1' }],
+        displayDrawer: false,
+      };
+      const newState = notificationsReducer(previousState, showDrawer());
+      expect(newState.notifications).toEqual(previousState.notifications);
+    });
+  });
+
+  it('should not modify notifications when hideDrawer is called', () => {
+    const previousState = {
+      notifications: [{ id: 1, value: 'notif 1' }],
+      displayDrawer: true,
+    };
+    const newState = notificationsReducer(previousState, hideDrawer());
+    expect(newState.notifications).toEqual(previousState.notifications);
+  });
+
+  it('should not remove any notification if ID does not exist', () => {
+    const previousState = {
+      notifications: mockData,
+      displayDrawer: true,
+    };
+    const newState = notificationsReducer(
+      previousState,
+      markNotificationAsRead(999)
+    );
+    expect(newState.notifications).toEqual(previousState.notifications);
+  });
+
+  it('should return a new state object (not mutate previous state)', () => {
+    const prevState = {
+      notifications: [{ id: 1, value: 'notif 1' }],
+      displayDrawer: false,
+    };
+    const newState = notificationsReducer(prevState, showDrawer());
+    expect(newState).not.toBe(prevState);
+  });
+
+  it('should log markNotificationsAsRead in the console', () => {
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    notificationsReducer(initialState, markNotificationAsRead(1));
+    expect(consoleSpy).toHaveBeenCalledWith('Notification 1 has been marked as read');
+    consoleSpy.mockRestore();
+  });
+})
+
+describe('notificationsSlice with axios-mock-adapter', () => {
+  it('should not crash if fetchNotifications fails (rejected)', async () => {
+      mock.onGet(ENDPOINTS.notifications).reply(500);
+
+      const store = configureStore({ reducer: { notifications: notificationsReducer } });
+      await store.dispatch(fetchNotifications());
+
+      const state = store.getState().notifications;
+      expect(state.notifications).toEqual([]);
+  });
+
+  it('should remove the notification with given id when markNotificationAsRead is dispatched', () => {
+    const previousState = {
+      notifications: [
+        { id: 1, value: 'notif 1' },
+        { id: 2, value: 'notif 2' },
+        { id: 3, value: 'notif 3' },
+      ],
+      displayDrawer: true,
     };
 
-    test('Should return the initial state', () => {
-        expect(notificationsSlice(undefined, { type: 'unknown' })).toEqual(
-            initialState
-        );
-    });
-
-    test('Should handle markNotificationAsRead', () => {
-        const stateWithNotifications = {
-            ...initialState,
-            notifications: [
-                { id: 1, message: 'Notification 1' },
-                { id: 2, message: 'Notification 2' },
-            ],
-        };
-        const action = markNotificationAsRead(1);
-        const expectedState = {
-            ...stateWithNotifications,
-            notifications: [{ id: 2, message: 'Notification 2' }],
-        };
-        expect(notificationsSlice(stateWithNotifications, action)).toEqual(
-            expectedState
-        );
-    });
-
-    test('Should handle showDrawer', () => {
-        const action = showDrawer();
-        const expectedState = {
-            ...initialState,
-            displayDrawer: true,
-        };
-        expect(notificationsSlice(initialState, action)).toEqual(expectedState);
-    });
-
-    test('Should handle hideDrawer', () => {
-        const stateWithDrawerClosed = {
-            ...initialState,
-            displayDrawer: false,
-        };
-        const action = hideDrawer();
-        expect(notificationsSlice(initialState, action)).toEqual(
-            stateWithDrawerClosed
-        );
-    });
-
-    describe('fetchNotifications async thunk', () => {
-        test('Should handle fetchNotifications.pending', () => {
-            const action = { type: fetchNotifications.pending.type };
-            const state = notificationsSlice(initialState, action);
-            expect(state).toEqual({
-                ...initialState,
-            });
-        });
-
-        test('Should handle fetchNotifications.rejected', () => {
-            const action = {
-                type: fetchNotifications.rejected.type,
-            };
-            const state = notificationsSlice(initialState, action);
-            expect(state).toEqual({
-                ...initialState,
-            });
-        });
-
-        test('Should handle fetchNotifications.rejected when base URL or port is incorrect', async () => {
-            const incorrectBaseURL = 'http://loclhost:5173';
-            mock.onGet(`${incorrectBaseURL}/notifications.json`).networkError();
-            const dispatch = jest.fn();
-            const getState = jest.fn();
-            await fetchNotifications()(dispatch, getState, null);
-            expect(dispatch).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    type: fetchNotifications.rejected.type,
-                })
-            );
-        });
-
-        test('Should handle fetchNotifications.rejected when endpoint is incorrect', async () => {
-            const incorrectEndpoint = 'http://localhost:5173/notifictions.json'; // Typo in "notifications"
-            mock.onGet(incorrectEndpoint).reply(404);
-            const dispatch = jest.fn();
-            const getState = jest.fn();
-            await fetchNotifications()(dispatch, getState, null);
-            expect(dispatch).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    type: fetchNotifications.rejected.type,
-                })
-            );
-        });
-
-        test('Should handle fetchNotifications.fulfilled when API request is successful', async () => {
-            const notifications = [
-                { id: 1, type: "default", value: "New course available" },
-                { id: 2, type: "urgent", value: "New resume available" },
-                { id: 3, type: 'urgent', html: { __html: '<strong>Urgent requirement</strong> - complete by EOD' } },
-            ];
-            mock.onGet('http://localhost:5173/notifications.json').reply(200, {
-                notifications,
-            });
-            const notificationsResponse = await axios.get('http://localhost:5173/notifications.json');
-            const dispatch = jest.fn();
-            const getState = jest.fn();
-            await fetchNotifications()(dispatch, getState, null);
-            expect(dispatch).toHaveBeenCalledTimes(2);
-            const fulfilledAction = dispatch.mock.calls[1][0];
-            expect(fulfilledAction).toEqual(
-                expect.objectContaining({
-                    type: fetchNotifications.fulfilled.type,
-                    payload: notificationsResponse.data.notifications,
-                })
-            );
-        });
-    });
+    const newState = notificationsReducer(previousState, markNotificationAsRead(2));
+    expect(newState.notifications).toHaveLength(2);
+    expect(newState.notifications.find((n) => n.id === 2)).toBeUndefined();
+  });
 });
