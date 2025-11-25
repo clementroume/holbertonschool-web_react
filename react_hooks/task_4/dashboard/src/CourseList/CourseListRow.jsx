@@ -1,62 +1,56 @@
-import React from 'react';
+import React from "react";
+import PropTypes from 'prop-types';
 import { StyleSheet, css } from 'aphrodite';
 
+export default function CourseListRow({ isHeader = false, textFirstCell = "", textSecondCell = null }) {
+    const rowClass = isHeader ? styles.headerRow : styles.defaultRow;
+    const thFirstClass = css(styles.thFirstCell);
+    const thSecondClass = css(styles.thSecondCell);
+
+    return (
+        <tr className={css(rowClass)}>
+            {isHeader ? (
+                textSecondCell === null ? (
+                    <th colSpan="2" className={thFirstClass}>{textFirstCell}</th>
+                ) : (
+                    <>
+                        <th className={thFirstClass}>{textFirstCell}</th>
+                        <th className={thSecondClass}>{textSecondCell}</th>
+                    </>
+                )
+            ) : (
+                <>
+                    <td>{textFirstCell}</td>
+                    <td>{textSecondCell}</td>
+                </>
+            )}
+        </tr>
+    );
+}
+
+CourseListRow.propTypes = {
+    isHeader: PropTypes.bool,
+    textFirstCell: PropTypes.string.isRequired,
+    textSecondCell: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number
+    ])
+};
+
 const styles = StyleSheet.create({
-    headerRow: {
-        backgroundColor: '#deb5b545',
-    },
     defaultRow: {
         backgroundColor: '#f5f5f5ab',
     },
-    thDefault: {
+    headerRow: {
+        backgroundColor: '#deb5b545',
     },
-    thColspan: {
-
+    thFirstCell: {
+        textAlign: 'left',
+        width: '70%',
+        borderBottom: '1px solid #ccc',
     },
-    tdCenter: {
-        textAlign: 'center',
+    thSecondCell: {
+        textAlign: 'left',
+        borderBottom: '1px solid #ccc',
     },
-    tdEmpty: {
-        border: 'none',
-        width: '0%',
-    }
 });
-
-function CourseListRow({ isHeader = false, textFirstCell = "", textSecondCell = null }) {
-    const rowStyleClass = isHeader ? styles.headerRow : styles.defaultRow;
-
-    if (isHeader === true) {
-        if (textSecondCell === null) {
-            return (
-                <tr className={css(rowStyleClass)}>
-                    <th className={css(styles.thColspan)} colSpan="2">{textFirstCell}</th>
-                </tr>
-            );
-        } else {
-            return (
-                <tr className={css(rowStyleClass)}>
-                    <th className={css(styles.thDefault)}>{textFirstCell}</th>
-                    <th className={css(styles.thDefault)}>{textSecondCell}</th>
-                </tr>
-            );
-        }
-    } else {
-        if (textSecondCell === null) {
-            return (
-                <tr className={css(rowStyleClass)}>
-                    <td className={css(styles.tdCenter)}>{textFirstCell}</td>
-                    <td className={css(styles.tdEmpty)}></td>
-                </tr>
-            );
-        } else {
-            return (
-                <tr className={css(rowStyleClass)}>
-                    <td>{textFirstCell}</td>
-                    <td>{textSecondCell}</td>
-                </tr>
-            );
-        }
-    }
-}
-
-export default CourseListRow;

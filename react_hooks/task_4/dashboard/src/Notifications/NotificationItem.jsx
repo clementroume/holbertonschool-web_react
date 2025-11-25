@@ -1,66 +1,53 @@
-import React, { memo, useRef } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { StyleSheet, css } from 'aphrodite';
 
+const NotificationItem = ({ type, value, html, markAsRead }) => {
+    const liClass = type === 'urgent' ? styles.urgent : styles.default;
+
+    return (
+        <li
+            className={css(liClass)}
+            data-notification-type={type}
+            dangerouslySetInnerHTML={type === 'urgent' && html !== undefined ? html : undefined}
+            onClick={markAsRead}
+        >
+            {type === 'urgent' && html !== undefined ? null : value}
+        </li>
+    );
+};
+
+const MemoizedNotificationItem = React.memo(NotificationItem);
+
+MemoizedNotificationItem.propTypes = {
+    type: PropTypes.string.isRequired,
+    value: PropTypes.string,
+    html: PropTypes.shape({ __html: PropTypes.string }),
+    markAsRead: PropTypes.func
+};
+
+MemoizedNotificationItem.defaultProps = {
+    type: 'default',
+    markAsRead: () => { }
+};
+
 const styles = StyleSheet.create({
-  default: {
-    color: 'blue',
-    cursor: 'pointer',
-  },
-  urgent: {
-    color: 'red',
-    cursor: 'pointer',
-  }
+    default: {
+        color: 'blue',
+        '@media (max-width: 900px)': {
+            width: '100%',
+            borderBottom: '2px solid black',
+            padding: '10px 8px',
+        },
+    },
+    urgent: {
+        color: 'red',
+        '@media (max-width: 900px)': {
+            width: '100%',
+            borderBottom: '2px solid black',
+            padding: '10px 8px',
+        },
+    },
 });
 
-const NotificationItem = memo(({ type = 'default', html, value, id, markAsRead }) => {
-  const liRef = useRef();
-
-  const handleClick = () => {
-    if (markAsRead) {
-      markAsRead(id);
-    }
-  };
-
-  const containsHTML = (str) => {
-    return typeof str === 'string' && /<\/?[a-z][\s\S]*>/i.test(str);
-  };
-
-  const styleClass = type === 'urgent' ? styles.urgent : styles.default;
-
-  if (html) {
-    return (
-      <li
-        ref={liRef}
-        className={css(styleClass)}
-        data-notification-type={type}
-        dangerouslySetInnerHTML={html}
-        onClick={handleClick}
-      />
-    );
-  }
-
-  if (value && containsHTML(value)) {
-    return (
-      <li
-        ref={liRef}
-        className={css(styleClass)}
-        data-notification-type={type}
-        dangerouslySetInnerHTML={{ __html: value }}
-        onClick={handleClick}
-      />
-    );
-  }
-
-  return (
-    <li
-      ref={liRef}
-      className={css(styleClass)}
-      data-notification-type={type}
-      onClick={handleClick}
-    >
-      {value}
-    </li>
-  );
-});
-
-export default NotificationItem;
+export default MemoizedNotificationItem;
