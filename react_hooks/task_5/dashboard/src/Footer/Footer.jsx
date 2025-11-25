@@ -1,30 +1,37 @@
-import React from 'react';
+import { useContext } from 'react';
+import { StyleSheet, css } from 'aphrodite';
 import { getCurrentYear, getFooterCopy } from '../utils/utils';
-import { newContext } from '../Context/context';
+import newContext from '../Context/context';
 
-function Footer() {
-  const context = React.useContext(newContext);
-  const { user, logOut } = context || {};
+const styles = StyleSheet.create({
+  footer: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTop: '5px red solid',
+    gap: '10px'
+  },
+  p: {
+    fontFamily: 'Roboto, sans-serif',
+    fontStyle: 'italic',
+    fontSize: '1.3rem',
+    padding: '0 3px',
+    margin: 0
+  }
+});
 
+export default function Footer() {
+  const { user } = useContext(newContext);
+  
   return (
-    <footer className='App-footer' style={{ textAlign: 'center' }}>
-      <p>Copyright {getCurrentYear()} - {getFooterCopy(true)}</p>
-      {user && user.isLoggedIn && (
-        <div>
-          <p>
-            <a href="#" onClick={(e) => { e.preventDefault(); logOut(); }} aria-label="Logout">
-              Logout
-            </a>
-          </p>
-          <p>
-            <a href="#" onClick={(e) => { e.preventDefault(); logOut(); }} aria-label="Contact us link">
-              Contact us
-            </a>
-          </p>
-        </div>
+    <div className={css(styles.footer)}>
+      <p className={css(styles.p)}>Copyright {getCurrentYear()} - {getFooterCopy(true)}</p>
+      {user.isLoggedIn && (
+        <span className={css(styles.p)}>
+          <a href="#">Contact us</a>
+        </span>
       )}
-    </footer>
+    </div>
   );
 }
-
-export default Footer;
