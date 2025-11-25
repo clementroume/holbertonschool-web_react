@@ -1,82 +1,147 @@
-import { render, screen } from "@testing-library/react";
-import CourseListRow from "./CourseListRow";
-import { StyleSheetTestUtils } from 'aphrodite';
+import React from 'react';
+import { render } from '@testing-library/react';
+import CourseListRow from './CourseListRow';
 
-beforeEach(() => {
-  StyleSheetTestUtils.suppressStyleInjection();
+
+test('When textSecondCell is null, renders one column header with colspan = 2', () => {
+    const { container } = render(
+        <table>
+            <tbody>
+                <CourseListRow
+                    isHeader={true}
+                    textFirstCell="Available courses"
+                    textSecondCell={null}
+                />
+            </tbody>
+        </table>
+    );
+
+    const th = container.querySelector('th');
+    expect(th).toBeInTheDocument();
+    expect(th).toHaveAttribute('colSpan', '2');
+    expect(th).toHaveTextContent('Available courses');
+
+    const allTh = container.querySelectorAll('th');
+    expect(allTh).toHaveLength(1);
 });
 
-afterEach(() => {
-  StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
+test('When textSecondCell is not null, renders 2 th cells', () => {
+    const { container } = render(
+        <table>
+            <tbody>
+                <CourseListRow
+                    isHeader={true}
+                    textFirstCell="Course name"
+                    textSecondCell="Credit"
+                />
+            </tbody>
+        </table>
+    );
+
+    const allTh = container.querySelectorAll('th');
+    expect(allTh).toHaveLength(2);
+    expect(allTh[0]).toHaveTextContent('Course name');
+    expect(allTh[1]).toHaveTextContent('Credit');
 });
 
-describe('When isHeader is true', () => {
-  test('Check whether the component renders one columnheader that has the attribute colspan = 2', () => {
-    render(
-      <table>
-        <tbody>
-          <CourseListRow isHeader={true} textFirstCell="test OnlyOneCell" />
-        </tbody>
-      </table>
+test('renders correctly two td elements within a tr element', () => {
+    const { container } = render(
+        <table>
+            <tbody>
+                <CourseListRow
+                    isHeader={false}
+                    textFirstCell="ES6"
+                    textSecondCell="60"
+                />
+            </tbody>
+        </table>
     );
 
-    const cols = screen.getAllByRole('columnheader');
-    expect(cols).toHaveLength(1);
-    expect(cols[0]).toHaveAttribute('colspan', '2');
-  });
+    const tr = container.querySelector('tr');
+    expect(tr).toBeInTheDocument();
 
-  test('Check whether the component renders 2 <th> cells', () => {
-    render(
-      <table>
-        <tbody>
-          <CourseListRow isHeader={true} textFirstCell="test firstCell" textSecondCell="testSecondCell" />
-        </tbody>
-      </table>
+    const allTd = container.querySelectorAll('td');
+    expect(allTd).toHaveLength(2);
+    expect(allTd[0]).toHaveTextContent('ES6');
+    expect(allTd[1]).toHaveTextContent('60');
+
+    expect(tr).toContainElement(allTd[0]);
+    expect(tr).toContainElement(allTd[1]);
+});
+
+test('Renders header row with single cell and correct background color', () => {
+    const { container } = render(
+        <table>
+            <thead>
+                <CourseListRow isHeader={true} textFirstCell="Available courses" />
+            </thead>
+        </table>
     );
 
-    const cols = screen.getAllByRole('columnheader');
-    expect(cols).toHaveLength(2);
-  });
+    const row = container.querySelector('tr');
+    const cell = container.querySelector('th[colspan="2"]');
 
-  test.skip('Check that header row with one cell has correct background color', () => {
-    render(
-      <table>
-        <tbody>
-          <CourseListRow isHeader={true} textFirstCell="Header One Cell" />
-        </tbody>
-      </table>
+    expect(cell).toBeInTheDocument();
+    expect(cell).toHaveTextContent('Available courses');
+    expect(row).toHaveStyle('background-color: #deb5b545');
+});
+
+test('Renders header row with two cells and correct background color', () => {
+    const { container } = render(
+        <table>
+            <thead>
+                <CourseListRow
+                    isHeader={true}
+                    textFirstCell="Course name"
+                    textSecondCell="Credit"
+                />
+            </thead>
+        </table>
     );
 
-    const row = screen.getByRole('row');
-    const bgColor = window.getComputedStyle(row).backgroundColor;
-    expect(bgColor).toBe('rgba(222, 181, 181, 0.271)');
-  });
+    const row = container.querySelector('tr');
+    const cells = container.querySelectorAll('th');
 
-  test.skip('Check that header row with two cells has correct background color', () => {
-    render(
-      <table>
-        <tbody>
-          <CourseListRow isHeader={true} textFirstCell="Header 1" textSecondCell="Header 2" />
-        </tbody>
-      </table>
+    expect(cells).toHaveLength(2);
+    expect(cells[0]).toHaveTextContent('Course name');
+    expect(cells[1]).toHaveTextContent('Credit');
+    expect(row).toHaveStyle('background-color: #deb5b545');
+});
+
+test('Renders regular row with correct background color', () => {
+    const { container } = render(
+        <table>
+            <tbody>
+                <CourseListRow
+                    textFirstCell="ES6"
+                    textSecondCell="60"
+                />
+            </tbody>
+        </table>
     );
 
-    const row = screen.getByRole('row');
-    const bgColor = window.getComputedStyle(row).backgroundColor;
-    expect(bgColor).toBe('rgba(222, 181, 181, 0.271)');
-  });
+    const row = container.querySelector('tr');
+    const cells = container.querySelectorAll('td');
 
-  test.skip('Check that non-header row has correct background color', () => {
-    render(
-      <table>
-        <tbody>
-          <CourseListRow isHeader={false} textFirstCell="Body 1" textSecondCell="Body 2" />
-        </tbody>
-      </table>
+    expect(cells).toHaveLength(2);
+    expect(cells[0]).toHaveTextContent('ES6');
+    expect(cells[1]).toHaveTextContent('60');
+    expect(row).toHaveStyle('background-color: #f5f5f5ab');
+});
+
+test('Renders row with only first cell when no second cell provided', () => {
+    const { container } = render(
+        <table>
+            <tbody>
+                <CourseListRow textFirstCell="No course available yet" />
+            </tbody>
+        </table>
     );
 
-    const row = screen.getByRole('row');
-    const bgColor = window.getComputedStyle(row).backgroundColor;
-    expect(bgColor).toBe('rgba(245, 245, 245, 0.671)');
-  });
+    const row = container.querySelector('tr');
+    const cells = container.querySelectorAll('td');
+
+    expect(cells).toHaveLength(2);
+    expect(cells[0]).toHaveTextContent('No course available yet');
+    expect(row).toHaveStyle('background-color: #f5f5f5ab');
 });

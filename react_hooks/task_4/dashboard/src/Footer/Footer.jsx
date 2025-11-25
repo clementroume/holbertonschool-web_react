@@ -1,29 +1,30 @@
-import React, { useContext } from 'react';
-import { StyleSheet, css } from 'aphrodite';
-import newContext from '../Context/context';
+import React from 'react';
+import { getCurrentYear, getFooterCopy } from '../utils/utils';
+import { newContext } from '../Context/context';
 
 function Footer() {
-    const { user } = useContext(newContext);
+  const context = React.useContext(newContext);
+  const { user, logOut } = context || {};
 
-    return (
-        <div className={css(styles.footer)}>
-            <p>Copyright 2024 - Holberton School</p>
-            {user?.isLoggedIn && (
-                <p>
-                    <a href="#">Contact us</a>
-                </p>
-            )}
+  return (
+    <footer className='App-footer' style={{ textAlign: 'center' }}>
+      <p>Copyright {getCurrentYear()} - {getFooterCopy(true)}</p>
+      {user && user.isLoggedIn && (
+        <div>
+          <p>
+            <a href="#" onClick={(e) => { e.preventDefault(); logOut(); }} aria-label="Logout">
+              Logout
+            </a>
+          </p>
+          <p>
+            <a href="#" onClick={(e) => { e.preventDefault(); logOut(); }} aria-label="Contact us link">
+              Contact us
+            </a>
+          </p>
         </div>
-    );
+      )}
+    </footer>
+  );
 }
-
-const styles = StyleSheet.create({
-    footer: {
-        borderTop: '3px solid #e1354b',
-        padding: '1rem',
-        fontStyle: 'italic',
-        textAlign: 'center',
-    },
-});
 
 export default Footer;

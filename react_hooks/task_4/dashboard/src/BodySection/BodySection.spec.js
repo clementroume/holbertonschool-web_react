@@ -1,30 +1,59 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import BodySection from './BodySection';
+import { render } from '@testing-library/react';
 import { StyleSheetTestUtils } from 'aphrodite';
+import BodySection from './BodySection';
 
 beforeEach(() => {
-  StyleSheetTestUtils.suppressStyleInjection();
+    StyleSheetTestUtils.suppressStyleInjection();
 });
 
 afterEach(() => {
-  StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
+    StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
 });
 
-describe('BodySection component', () => {
-  test('renders the title inside an h2 (case-insensitive)', () => {
-    render(<BodySection title="Test Title"><p>Child content</p></BodySection>);
-    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(/test title/i);
-  });
-
-  test('renders any children passed to it', () => {
-    render(
-      <BodySection title="With children">
-        <p>First child</p>
-        <p>Second child</p>
-      </BodySection>
+test('Renders heading with title prop value', () => {
+    const { getByRole } = render(
+        <BodySection title='test title' />
     );
-    expect(screen.getByText(/first child/i)).toBeInTheDocument();
-    expect(screen.getByText(/second child/i)).toBeInTheDocument();
-  });
+
+    const heading = getByRole('heading', { level: 2 });
+    expect(heading).toBeInTheDocument();
+    expect(heading).toHaveTextContent('test title');
+});
+
+test('Renders any number of children passed to it', () => {
+    const { getByText } = render(
+        <BodySection title='test title'>
+            <p>test paragraph</p>
+            <span>test span</span>
+            <div>test div</div>
+        </BodySection>
+    );
+
+    expect(getByText('test paragraph')).toBeInTheDocument();
+    expect(getByText('test span')).toBeInTheDocument();
+    expect(getByText('test div')).toBeInTheDocument();
+});
+
+test('Renders with single child', () => {
+    const { getByText, getByRole } = render(
+        <BodySection title='test title'>
+            <p>test content</p>
+        </BodySection>
+    );
+
+    const heading = getByRole('heading', { level: 2 });
+    expect(heading).toHaveTextContent('test title');
+    
+    expect(getByText('test content')).toBeInTheDocument();
+});
+
+test('Renders with no children', () => {
+    const { container } = render(
+        <BodySection title='test title' />
+    );
+
+    const bodySection = container.firstChild;
+    expect(bodySection).toBeInTheDocument();
+    expect(bodySection.children).toHaveLength(1);
 });
