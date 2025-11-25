@@ -1,81 +1,73 @@
-import React from 'react';
-import CourseListRow from './CourseListRow';
 import { StyleSheet, css } from 'aphrodite';
+import CourseListRow from './CourseListRow';
+import WithLogging from '../HOC/WithLogging';
+
+const styles = StyleSheet.create({
+  courses: {
+    margin: '130px auto',
+    width: '90%',
+    height: '33vh'
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    border: '2px solid rgb(161, 161, 161)',
+    ':nth-child(1n) th': {
+      border: '2px solid rgb(161, 161, 161)'
+    },
+    ':nth-child(1n) tr': {
+      border: '2px solid rgb(161, 161, 161)'
+    },
+    ':nth-child(1n) td': {
+      border: '2px solid rgb(161, 161, 161)'
+    }
+  }
+});
 
 function CourseList({ courses = [] }) {
-    const styles = StyleSheet.create({
-        CourseListContainer: {
-            width: '100%',
-            height: '100%',
-            padding: '0 5rem',
-            flex: 1,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center'
-        },
-        CourseList: {
-            width: '100%',
-            borderCollapse: 'collapse',
-            ':nth-child(1n) th': {
-                textAlign: 'center',
-                padding: '0.20rem',
-                border: '1px solid black'
-            },
-            ':nth-child(1n) td': {
-                textAlign: 'left',
-                padding: '0.20rem',
-                border: '1px solid black'
-            },
-            ':nth-child(1n) th:first-child': {
-                width: '60%'
-            },
-            ':nth-child(1n) td:first-child': {
-                width: '60%'
-            },
-            ':nth-child(1n) th:last-child': {
-                width: '40%'
-            },
-            ':nth-child(1n) td:last-child': {
-                width: '40%'
-            }
-        }
-    });
-
-    if (courses.length === 0) {
-        return (
-            <div className={css(styles.CourseListContainer)}>
-                <table className={css(styles.CourseList)}>
-                    <tbody>
-                        <CourseListRow textFirstCell="No course available yet" />
-                    </tbody>
-                </table>
-            </div>
-        );
-    }
-
-    return (
-        <div className={css(styles.CourseListContainer)}>
-            <table className={css(styles.CourseList)}>
-                <thead>
-                    <CourseListRow textFirstCell="Available courses" isHeader={true} />
-                    <CourseListRow
-                        textFirstCell="Course name"
-                        textSecondCell="Credit"
-                        isHeader={true}
-                    />
-                </thead>
-                <tbody>
-                    {courses.map(course => (
-                        <CourseListRow
-                            key={course.id}
-                            textFirstCell={course.name}
-                            textSecondCell={course.credit.toString()}
-                        />
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
+  return (
+    <div className={css(styles.courses)}>
+      {
+        courses.length > 0 ? 
+        (
+          <table id='CourseList' className={css(styles.table)}>
+            <thead>
+              <CourseListRow 
+                textFirstCell="Available courses" 
+                isHeader={true} 
+              />
+              <CourseListRow 
+                textFirstCell="Course name" 
+                textSecondCell="Credit" 
+                isHeader={true} 
+              />
+            </thead>
+            <tbody>
+              {
+                courses.map(course => (
+                  <CourseListRow 
+                    key={course.id} 
+                    textFirstCell={course.name} 
+                    textSecondCell={course.credit} 
+                  />
+                ))
+              }
+            </tbody>
+          </table>
+        ) : (
+          <table id='CourseList' className={css(styles.table)}>
+            <thead>
+              <CourseListRow 
+                isHeader={true} 
+                textFirstCell="No course available yet" 
+              />
+            </thead>
+          </table>
+        )
+      }
+    </div>
+  );
 }
 
-export default CourseList;
+const CourseListWithLogging = WithLogging(CourseList);
+export default CourseListWithLogging
