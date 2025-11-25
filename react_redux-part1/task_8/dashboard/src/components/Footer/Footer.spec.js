@@ -1,49 +1,77 @@
-// External libraries.
 import { render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import { StyleSheetTestUtils } from 'aphrodite';
-
-// Reducers.
-import authReducer from '../../features/auth/authSlice';
-import coursesReducer from '../../features/courses/coursesSlice';
-import notificationsReducer from '../../features/notifications/notificationsSlice';
-
-// Components.
 import Footer from './Footer';
+import authReducer from '../../features/auth/authSlice';
+import { getCurrentYear, getFooterCopy } from '../../utils/utils';
 
-// Create test store
-const testStore = configureStore({
-  reducer: {
-    auth: authReducer,
-    courses: coursesReducer,
-    notifications: notificationsReducer,
-  },
-});
+const createMockStore = (initialState) => {
+  return configureStore({
+    reducer: {
+      auth: authReducer
+    },
+    preloadedState: initialState
+  });
+};
 
-// Suppress Aphrodite style injection before tests.
-beforeEach(() => {
-  StyleSheetTestUtils.suppressStyleInjection();
-});
-
-// Clear and resume style injection after tests.
-afterAll(() => {
-  StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
-});
-
-/******************
-* COMPONENT TESTS *
-******************/
-
-test('Renders correct copyright text', () => {
-  render(
-    <Provider store={testStore}>
-      <Footer />
+const renderWithRedux = (component, initialState) => {
+  const store = createMockStore(initialState);
+  return render(
+    <Provider store={store}>
+      {component}
     </Provider>
   );
+};
 
-  const currentYear = new Date().getFullYear();
-  const footerParagraph = screen.getByText(new RegExp(`copyright ${currentYear}.*holberton school`, 'i'));
+test('It should render footer with copyright text', () => {
+  const initialState = {
+    auth: {
+      user: {
+        email: '',
+        password: ''
+      },
+      isLoggedIn: false
+    }
+  };
 
-  expect(footerParagraph).toBeInTheDocument();
+  renderWithRedux(<Footer />, initialState);
+
+  const footerParagraph = screen.getByText(/copyright/i);
+
+  expect(footerParagraph).toHaveTextContent(new RegExp(`copyright ${(new Date()).getFullYear()}`, 'i'))
+  expect(footerParagraph).toHaveTextContent(/holberton school/i)
+});
+
+test('Contact us link is not displayed when user is logged out', () => {
+  const initialState = {
+    auth: {
+      user: {
+        email: '',
+        password: ''
+      },
+      isLoggedIn: false
+    }
+  };
+
+  renderWithRedux(<Footer />, initialState);
+
+  const contactLink = screen.queryByText(/contact us/i);
+  expect(contactLink).not.toBeInTheDocument();
+});
+
+test('Contact us link is displayed when user is logged in', () => {
+  const initialState = {
+    auth: {
+      user: {
+        email: 'test@test.com',
+        password: 'password123'
+      },
+      isLoggedIn: true
+    }
+  };
+
+  renderWithRedux(<Footer />, initialState);
+
+  const contactLink = screen.getByText(/contact us/i);
+  expect(contactLink).toBeInTheDocument();
 });

@@ -1,48 +1,34 @@
-// External libraries.
 import { useState } from 'react';
 
-// Custom hook for managing login form state and validation.
-const useLogin = ({ onLogin }) => {
+const useLogin = (onLogin) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [enableSubmit, setEnableSubmit] = useState(false);
 
-  // Validates email format using regex.
-  const validateEmail = (value) => {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(value);
-  };
-
-  // Validates entire form based on email and password criteria.
-  const validateForm = (emailValue, passwordValue) => {
-    const emailOk = emailValue.length > 0 && validateEmail(emailValue);
-    const passwordOk = passwordValue.length >= 8;
-    return emailOk && passwordOk;
-  };
-
-  // Handles email input change and validates form.
   const handleChangeEmail = (e) => {
-    const emailValue = e.target.value;
-    setEmail(emailValue);
-    setEnableSubmit(validateForm(emailValue, password));
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    setEnableSubmit(validateEmail(newEmail) && password.length >= 8);
   };
 
-  // Handles password input change and validates form.
   const handleChangePassword = (e) => {
-    const passwordValue = e.target.value;
-    setPassword(passwordValue);
-    setEnableSubmit(validateForm(email, passwordValue));
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    setEnableSubmit(validateEmail(email) && newPassword.length >= 8);
   };
 
-  // Handles form submission and calls onLogin callback.
   const handleLoginSubmit = (e) => {
     e.preventDefault();
-    if (typeof onLogin === 'function') {
+    if (validateEmail(email) && password.length >= 8) {
       onLogin(email, password);
     }
   };
 
-  // Return hook interface.
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   return {
     email,
     password,

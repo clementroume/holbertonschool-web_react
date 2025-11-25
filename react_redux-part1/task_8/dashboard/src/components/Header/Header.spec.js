@@ -1,37 +1,20 @@
-// External libraries.
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-
-// Styles.
-import { StyleSheetTestUtils } from 'aphrodite';
-
-// Components.
 import Header from './Header';
-
-// Redux reducers
 import authReducer from '../../features/auth/authSlice';
 
-// Helper function to create test store
-const createTestStore = (initialState = {}) => {
+const createMockStore = (initialState) => {
   return configureStore({
     reducer: {
-      auth: authReducer,
+      auth: authReducer
     },
-    preloadedState: {
-      auth: {
-        isLoggedIn: false,
-        user: { email: '', password: '' },
-        ...initialState.auth
-      }
-    }
+    preloadedState: initialState
   });
 };
 
-// Helper function to render with Redux Provider
-const renderWithRedux = (component, initialState = {}) => {
-  const store = createTestStore(initialState);
+const renderWithRedux = (component, initialState) => {
+  const store = createMockStore(initialState);
   return render(
     <Provider store={store}>
       {component}
@@ -39,89 +22,104 @@ const renderWithRedux = (component, initialState = {}) => {
   );
 };
 
-// Suppress Aphrodite style injection before tests.
-beforeAll(() => {
-  StyleSheetTestUtils.suppressStyleInjection();
+export const convertHexToRGBA = (hexCode) => {
+  let hex = hexCode.replace('#', '');
+
+  if (hex.length === 3) {
+    hex = `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+    console.log({hex})
+  }
+
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+
+  return { r, g, b };
+};
+
+test('should contain a <p/> element with specific text, <h1/>, and an <img/>', () => {
+  const initialState = {
+    auth: {
+      user: {
+        email: '',
+        password: ''
+      },
+      isLoggedIn: false
+    }
+  };
+
+  renderWithRedux(<Header />, initialState);
+
+  const headingElement = screen.getByRole('heading', {name: /school Dashboard/i});
+  const imgElement = screen.getByAltText('holberton logo')
+
+  expect(headingElement).toBeInTheDocument();
+  expect(headingElement).toHaveStyle({color: convertHexToRGBA('#e1003c') })
+  expect(imgElement).toBeInTheDocument();
 });
 
-// Clear and resume style injection after tests.
-afterAll(() => {
-  StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
+test('logoutSection is not rendered with default context value', () => {
+  const initialState = {
+    auth: {
+      user: {
+        email: '',
+        password: ''
+      },
+      isLoggedIn: false
+    }
+  };
+
+  renderWithRedux(<Header />, initialState);
+
+  const logoutSection = screen.queryByText(/logout/i);
+
+  expect(logoutSection).not.toBeInTheDocument();
 });
 
-/******************
-* COMPONENT TESTS *
-******************/
+test('logoutSection is rendered when user is logged in', () => {
+  const initialState = {
+    auth: {
+      user: {
+        email: 'test@test.com',
+        password: 'password123'
+      },
+      isLoggedIn: true
+    }
+  };
 
-describe('Header Component Tests', () => {
-  test('Renders logo image', () => {
-    renderWithRedux(<Header />);
+  renderWithRedux(<Header />, initialState);
 
-    const imgElement = screen.getByAltText(/holberton logo/i);
-    expect(imgElement).toBeInTheDocument();
-  });
+  const logoutSection = screen.getByText(/logout/i);
+  expect(logoutSection).toBeInTheDocument();
+  expect(screen.getByText(/test@test.com/i)).toBeInTheDocument();
+});
 
-  test('Renders main heading with "School Dashboard" text', () => {
-    renderWithRedux(<Header />);
+test('clicking logout link calls the logOut function', () => {
+  const initialState = {
+    auth: {
+      user: {
+        email: 'test@test.com',
+        password: 'password123'
+      },
+      isLoggedIn: true
+    }
+  };
 
-    const headingElement = screen.getByRole('heading', { name: /school dashboard/i });
-    expect(headingElement).toBeInTheDocument();
-  });
+  const store = createMockStore(initialState);
+  const dispatchSpy = jest.spyOn(store, 'dispatch');
 
-  test('Logout section is hidden when user is not logged in', () => {
-    renderWithRedux(<Header />, {
-      auth: {
-        isLoggedIn: false,
-        user: { email: '', password: '' }
-      }
-    });
+  render(
+    <Provider store={store}>
+      <Header />
+    </Provider>
+  );
 
-    expect(screen.queryByText(/welcome/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /logout/i })).not.toBeInTheDocument();
-  });
+  const logoutLink = screen.getByText(/logout/i);
+  fireEvent.click(logoutLink);
 
-  test('Logout section is displayed when user is logged in', () => {
-    renderWithRedux(<Header />, {
-      auth: {
-        isLoggedIn: true,
-        user: { email: 'user@example.com', password: 'password' }
-      }
-    });
-
-    expect(screen.getByText(/welcome/i)).toBeInTheDocument();
-    expect(screen.getByText(/user@example.com/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /logout/i })).toBeInTheDocument();
-  });
-
-  test('Clicking logout link triggers logout action', async () => {
-    const userUi = userEvent.setup();
-    
-    const store = createTestStore({
-      auth: {
-        isLoggedIn: true,
-        user: { email: 'user@example.com', password: 'password' }
-      }
-    });
-
-    // Spy on store dispatch to verify logout action is called
-    const dispatchSpy = jest.spyOn(store, 'dispatch');
-
-    render(
-      <Provider store={store}>
-        <Header />
-      </Provider>
-    );
-
-    const logoutLink = screen.getByRole('link', { name: /logout/i });
-    await userUi.click(logoutLink);
-
-    // Verify that dispatch was called (logout action)
-    expect(dispatchSpy).toHaveBeenCalled();
-    
-    // Verify that the state changed (user is logged out)
-    const state = store.getState();
-    expect(state.auth.isLoggedIn).toBe(false);
-
-    dispatchSpy.mockRestore();
-  });
+  expect(dispatchSpy).toHaveBeenCalledWith(
+    expect.objectContaining({
+      type: 'auth/logout'
+    })
+  );
 });

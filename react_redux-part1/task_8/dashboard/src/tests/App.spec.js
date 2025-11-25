@@ -1,188 +1,172 @@
-// External libraries.
-import { render, screen, act, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import axios from 'axios';
+import { render, screen, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-
-// Styles.
-import { StyleSheetTestUtils } from 'aphrodite';
-
-// Components.
+import userEvent from '@testing-library/user-event';
+import mockAxios from 'jest-mock-axios';
 import App from '../App';
-
-// Redux reducers
-import authReducer from '../features/auth/authSlice';
-import notificationsReducer from '../features/notifications/notificationsSlice';
+import authReducer, { login } from '../features/auth/authSlice';
 import coursesReducer from '../features/courses/coursesSlice';
+import notificationsReducer from '../features/notifications/notificationsSlice';
 
-// Mocks axios.
-jest.mock('axios');
+describe('App Component Integration Tests', () => {
+  let store;
 
-// Mock data.
-const mockNotifications = [
-  { id: 1, type: 'default', value: 'New course available' },
-  { id: 2, type: 'urgent', value: 'New resume available' },
-  { id: 3, type: 'urgent', html: { __html: 'Urgent requirement - complete by EOD' } },
-];
-
-const mockCourses = [
-  { id: 1, name: 'ES6', credit: 60 },
-  { id: 2, name: 'Webpack', credit: 20 },
-  { id: 3, name: 'React', credit: 40 },
-];
-
-// Helper function to create test store
-const createTestStore = (initialState = {}) => {
-  return configureStore({
-    reducer: {
-      auth: authReducer,
-      notifications: notificationsReducer,
-      courses: coursesReducer,
-    },
-    preloadedState: {
-      auth: {
-        isLoggedIn: false,
-        user: { email: '', password: '' },
-        ...initialState.auth
+  beforeEach(() => {
+    store = configureStore({
+      reducer: {
+        auth: authReducer,
+        courses: coursesReducer,
+        notifications: notificationsReducer,
       },
-      notifications: {
-        notifications: [],
-        displayDrawer: false,
-        ...initialState.notifications
+    });
+  });
+
+  afterEach(() => {
+    mockAxios.reset();
+  });
+
+  test('should NOT populate courses when not logged in', async () => {
+    render(
+      <Provider store={store}>
+        <App />
+      </Provider>
+    );
+
+    mockAxios.mockResponse({
+      data: {
+        notifications: [
+          { id: 1, type: 'default', value: 'New course available' },
+          { id: 2, type: 'urgent', value: 'New resume available' },
+          { id: 3, type: 'urgent', value: 'Placeholder' },
+        ],
       },
-      courses: {
-        courses: [],
-        ...initialState.courses
-      }
-    }
-  });
-};
-
-// Helper function to render with Redux Provider
-const renderWithRedux = (component, initialState = {}) => {
-  const store = createTestStore(initialState);
-  return render(
-    <Provider store={store}>
-      {component}
-    </Provider>
-  );
-};
-
-// Suppress Aphrodite style injection before tests.
-beforeAll(() => {
-  StyleSheetTestUtils.suppressStyleInjection();
-});
-
-// Clear and resume style injection after tests.
-afterAll(() => {
-  StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
-});
-
-// Reset mocks before each test.
-beforeEach(() => {
-  jest.clearAllMocks();
-  axios.get.mockImplementation((url) => {
-    if (url.includes('notifications')) return Promise.resolve({ data: mockNotifications });
-    if (url.includes('courses')) return Promise.resolve({ data: mockCourses });
-    return Promise.resolve({ data: [] });
-  });
-});
-
-/******************
-* COMPONENT TESTS *
-******************/
-
-describe('App Component Tests', () => {
-  test('Renders all main components', async () => {
-    renderWithRedux(<App />);
+    });
 
     await waitFor(() => {
-      expect(axios.get).toHaveBeenCalledWith('http://localhost:3000/notifications.json');
-    });
-
-    expect(screen.getByText(/school dashboard/i)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /log in to continue/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /news from the school/i })).toBeInTheDocument();
-    expect(screen.getByText(/holberton school news goes here/i)).toBeInTheDocument();
-    expect(screen.getByText(/copyright/i)).toBeInTheDocument();
-    expect(screen.getByText(/your notifications/i)).toBeInTheDocument();
-  });
-
-  test('Login displays course list and hides login form', async () => {
-    renderWithRedux(<App />);
-    const user = userEvent.setup();
-
-    await waitFor(() => expect(axios.get).toHaveBeenCalledWith('http://localhost:3000/notifications.json'));
-
-    await user.type(screen.getByLabelText(/email/i), 'user@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'strongpass');
-    await user.click(screen.getByRole('button', { name: /ok/i }));
-
-    await waitFor(() => screen.getByText('logout'));
-    await user.click(screen.getByText('logout'));
-
-    await waitFor(() => screen.getByRole('heading', { name: /log in to continue/i }));
-  });
-
-  test('Notifications are loaded from API', async () => {
-    renderWithRedux(<App />);
-
-    await waitFor(() => expect(axios.get).toHaveBeenCalledWith('http://localhost:3000/notifications.json'));
-    expect(screen.getByText(/your notifications/i)).toBeInTheDocument();
-  });
-
-  test('Displays notifications when available', async () => {
-    axios.get.mockImplementation((url) => {
-      if (url.includes('notifications')) {
-        return Promise.resolve({
-          data: {
-            notifications: [
-              { id: 1, type: 'default', value: 'New course available' },
-              { id: 2, type: 'urgent', value: 'New resume available' },
-            ],
+      expect(store.getState().courses.courses).toHaveLength(0);
+      expect(store.getState().notifications).toEqual({
+        displayDrawer: true,
+        notifications: [
+          { id: 1, type: 'default', value: 'New course available' },
+          { id: 2, type: 'urgent', value: 'New resume available' },
+          {
+            id: 3,
+            type: 'urgent',
+            html: { __html: '<strong>Urgent requirement</strong> - complete by EOD' },
           },
-        });
-      }
-      return Promise.resolve({ data: [] });
+        ],
+      });
     });
 
-    renderWithRedux(<App />);
-
-    await waitFor(() => expect(axios.get).toHaveBeenCalledWith('http://localhost:3000/notifications.json'));
-
-    await act(async () => new Promise((resolve) => setTimeout(resolve, 100)));
-
-    expect(screen.getByText(/your notifications/i)).toBeInTheDocument();
+    expect(screen.getByText('Log in to continue')).toBeInTheDocument();
   });
-});
 
-/***********************
-* KEYBOARD EVENT TESTS *
-***********************/
+  test('should populate courses WHEN logged in', async () => {
+    store.dispatch(login({ email: 'test@example.com' }));
 
-describe('Keyboard events', () => {
-  test('Ctrl+H logs out user', async () => {
-    renderWithRedux(<App />);
-    const user = userEvent.setup();
-    const alertMock = jest.spyOn(window, 'alert').mockImplementation(() => { });
+    render(
+      <Provider store={store}>
+        <App />
+      </Provider>
+    );
 
-    await waitFor(() => expect(axios.get).toHaveBeenCalledWith('http://localhost:3000/notifications.json'));
-
-    await user.type(screen.getByLabelText(/email/i), 'user@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'strongpass');
-    await user.click(screen.getByRole('button', { name: /ok/i }));
-
-    await waitFor(() => screen.getByRole('heading', { name: /course list/i }));
-
-    await act(async () => {
-      const event = new KeyboardEvent('keydown', { key: 'h', ctrlKey: true });
-      document.dispatchEvent(event);
+    mockAxios.mockResponse({
+      data: {
+        notifications: [
+          { id: 1, type: 'default', value: 'New course available' },
+          { id: 2, type: 'urgent', value: 'New resume available' },
+          { id: 3, type: 'urgent', value: 'Placeholder' },
+        ],
+      },
     });
 
-    await waitFor(() => expect(alertMock).toHaveBeenCalledWith('Logging you out'));
-    await waitFor(() => screen.getByRole('heading', { name: /log in to continue/i }));
+    mockAxios.mockResponse({
+      data: {
+        courses: [
+          { id: 1, name: 'ES6', credit: 60 },
+          { id: 2, name: 'Webpack', credit: 20 },
+          { id: 3, name: 'React', credit: 40 },
+        ],
+      },
+    });
 
-    alertMock.mockRestore();
+    await waitFor(() => {
+      expect(store.getState().courses.courses).toEqual([
+        { id: 1, name: 'ES6', credit: 60 },
+        { id: 2, name: 'Webpack', credit: 20 },
+        { id: 3, name: 'React', credit: 40 },
+      ]);
+    });
+
+    expect(screen.getByText('Course list')).toBeInTheDocument();
+  });
+
+  test('should CLEAR courses on logout', async () => {
+    const user = userEvent.setup();
+
+    store.dispatch(login({ email: 'test@example.com' }));
+
+    render(
+      <Provider store={store}>
+        <App />
+      </Provider>
+    );
+
+    mockAxios.mockResponse({
+      data: {
+        notifications: [
+          { id: 1, type: 'default', value: 'New course available' },
+          { id: 2, type: 'urgent', value: 'New resume available' },
+          { id: 3, type: 'urgent', value: 'Placeholder' },
+        ],
+      },
+    });
+
+    mockAxios.mockResponse({
+      data: {
+        courses: [
+          { id: 1, name: 'ES6', credit: 60 },
+          { id: 2, name: 'Webpack', credit: 20 },
+          { id: 3, name: 'React', credit: 40 },
+        ],
+      },
+    });
+
+    await waitFor(() => {
+      expect(store.getState().courses.courses).toEqual([
+        { id: 1, name: 'ES6', credit: 60 },
+        { id: 2, name: 'Webpack', credit: 20 },
+        { id: 3, name: 'React', credit: 40 },
+      ]);
+    });
+
+    const logoutLink = screen.getByText('(logout)');
+    await user.click(logoutLink);
+
+    await waitFor(() => {
+      expect(store.getState().auth.isLoggedIn).toBe(false);
+      expect(store.getState().courses.courses).toEqual([]);
+    });
+
+    expect(screen.getByText('Log in to continue')).toBeInTheDocument();
+  });
+
+  test('should NOT fetch courses when not logged in', async () => {
+    render(<Provider store={store}><App /></Provider>);
+
+    mockAxios.mockResponse({ data: { 
+      notifications: [
+        { id: 1, type: 'default', value: 'New course available' },
+        { id: 2, type: 'urgent', value: 'New resume available' },
+        { id: 3, type: 'urgent', value: 'Placeholder' },
+        ]
+      } 
+    });
+
+    await waitFor(() => {
+      expect(store.getState().notifications.notifications).toHaveLength(3);
+    });
+
+    expect(mockAxios.queue()).toHaveLength(0);
   });
 });

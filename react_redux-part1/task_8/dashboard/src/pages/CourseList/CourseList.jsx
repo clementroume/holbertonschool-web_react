@@ -1,79 +1,56 @@
-// External libraries.
-import { StyleSheet, css } from 'aphrodite';
-
-// Components.
 import CourseListRow from './CourseListRow/CourseListRow';
+import { useSelector } from 'react-redux';
+import { StyleSheet, css } from 'aphrodite';
+import WithLogging from '../../components/HOC/WithLogging';
 
-function CourseList({ courses = [] }) {
-
-  // Styles.
-  const styles = StyleSheet.create({
-    CourseListContainer: {
-      width: '100%',
-      height: '100%',
-      flex: 1,
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
+const styles = StyleSheet.create({
+  courses: {
+    margin: '130px auto',
+    width: '90%',
+    height: '33vh'
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    border: '2px solid rgb(161, 161, 161)',
+    ':nth-child(1n) th': {
+      border: '2px solid rgb(161, 161, 161)'
     },
-    CourseList: {
-      width: '100%',
-      borderCollapse: 'collapse',
-      ':nth-child(1n) th': {
-        textAlign: 'center',
-        padding: '0.20rem',
-        border: '1px solid black',
-      },
-      ':nth-child(1n) td': {
-        textAlign: 'left',
-        padding: '0.20rem',
-        border: '1px solid black',
-      },
-      ':nth-child(1n) th:first-child': { width: '60%' },
-      ':nth-child(1n) td:first-child': { width: '60%' },
-      ':nth-child(1n) th:last-child': { width: '40%' },
-      ':nth-child(1n) td:last-child': { width: '40%' },
+    ':nth-child(1n) tr': {
+      border: '2px solid rgb(161, 161, 161)'
     },
-  });
+    ':nth-child(1n) td': {
+      border: '2px solid rgb(161, 161, 161)'
+    }
+  }
+});
 
+function CourseList() {
+  const { courses } = useSelector((state) => state.courses);
 
-  //Render empty state.
-  if (courses.length === 0) {
-    return (
-      <div className={css(styles.CourseListContainer)}>
-        <table className={css(styles.CourseList)}>
+  return (
+    <div className={css(styles.courses)}>
+      {courses.length > 0 ? (
+        <table id="CourseList"  className={css(styles.table)}>
+          <thead>
+            <CourseListRow textFirstCell="Available courses" isHeader={true} />
+            <CourseListRow textFirstCell="Course name" textSecondCell="Credit" isHeader={true} />
+          </thead>
           <tbody>
-            <CourseListRow textFirstCell="No course available yet" />
+            {courses.map((course) => (
+              <CourseListRow key={course.id} textFirstCell={course.name} textSecondCell={course.credit} />
+            ))}
           </tbody>
         </table>
-      </div>
-    );
-  }
-
-  //Render courses table.
-  return (
-    <div className={css(styles.CourseListContainer)}>
-      <table className={css(styles.CourseList)}>
-        <thead>
-          <CourseListRow textFirstCell="Available courses" isHeader={true} />
-          <CourseListRow
-            textFirstCell="Course name"
-            textSecondCell="Credit"
-            isHeader={true}
-          />
-        </thead>
-        <tbody>
-          {courses.map((course) => (
-            <CourseListRow
-              key={course.id}
-              textFirstCell={course.name}
-              textSecondCell={course.credit.toString()}
-            />
-          ))}
-        </tbody>
-      </table>
+      ) : (
+        <table id="CourseList" className={css(styles.table)}>
+          <thead>
+            <CourseListRow isHeader={true} textFirstCell="No course available yet" />
+          </thead>
+        </table>
+      )}
     </div>
   );
 }
 
-export default CourseList;
+export default WithLogging(CourseList);

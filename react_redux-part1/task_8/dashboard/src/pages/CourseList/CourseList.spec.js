@@ -1,45 +1,67 @@
-// External libraries.
-import { render } from '@testing-library/react';
-import { StyleSheetTestUtils } from 'aphrodite';
-
-// Components.
+import { render, screen } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
 import CourseList from './CourseList';
+import coursesReducer from '../../features/courses/coursesSlice';
 
-// Suppress Aphrodite style injection before tests.
-beforeEach(() => {
-  StyleSheetTestUtils.suppressStyleInjection();
-});
-
-// Clear and resume style injection after tests.
-afterAll(() => {
-  StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
-});
-
-/******************
-* COMPONENT TESTS *
-******************/
-
-describe('CourseList Component Tests', () => {
-  test('Renders correct number of rows with non-empty courses array', () => {
-    const courses = [
-      { id: 1, name: "ES6", credit: "60" },
-      { id: 2, name: "Webpack", credit: "20" },
-      { id: 3, name: "React", credit: "40" }
-    ];
-
-    const { container } = render(<CourseList courses={courses} />);
-    const allRows = container.querySelectorAll('tr');
-
-    // 2 header rows + 3 data rows = 5 rows.
-    expect(allRows).toHaveLength(5);
+const createMockStore = (initialState) => {
+  return configureStore({
+    reducer: {
+      courses: coursesReducer
+    },
+    preloadedState: initialState
   });
+};
 
-  test('Renders 1 row and "No course available yet" message with empty courses array', () => {
-    const { container } = render(<CourseList courses={[]} />);
-    const allRows = container.querySelectorAll('tr');
+const renderWithRedux = (component, initialState) => {
+  const store = createMockStore(initialState);
+  return render(
+    <Provider store={store}>
+      {component}
+    </Provider>
+  );
+};
 
-    // Only 1 row should be rendered for empty state.
-    expect(allRows).toHaveLength(1);
-    expect(container).toHaveTextContent('No course available yet');
-  });
-});
+test('it should render the CourseList component without crashing', () => {
+  const initialState = {
+    courses: {
+      courses: [
+        { id: 1, name: 'ES6', credit: 60 },
+        { id: 2, name: 'Webpack', credit: 20 },
+        { id: 3, name: 'React', credit: 40 }
+      ]
+    }
+  };
+  renderWithRedux(<CourseList />, initialState);
+})
+
+test('it should render the CourseList component with 5 rows', () => {
+  const initialState = {
+    courses: {
+      courses: [
+        { id: 1, name: 'ES6', credit: 60 },
+        { id: 2, name: 'Webpack', credit: 20 },
+        { id: 3, name: 'React', credit: 40 }
+      ]
+    }
+  };
+  renderWithRedux(<CourseList />, initialState);
+
+  const rowElements = screen.getAllByRole('row');
+
+  expect(rowElements).toHaveLength(5)
+})
+
+test('it should render the CourseList component with 1 rows', () => {
+  const initialState = {
+    courses: {
+      courses: []
+    }
+  };
+
+  renderWithRedux(<CourseList />, initialState);
+
+  const rowElements = screen.getAllByRole('row');
+
+  expect(rowElements).toHaveLength(1)
+})

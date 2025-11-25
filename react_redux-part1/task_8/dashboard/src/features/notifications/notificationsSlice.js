@@ -15,22 +15,39 @@ const ENDPOINTS = {
 export const fetchNotifications = createAsyncThunk(
   'notifications/fetchNotifications',
   async () => {
-    const response = await axios.get('/notifications.json');
-    return response.data;
+    const response = await axios.get(ENDPOINTS.notifications);
+    const latestNotif = {
+      id: 3,
+      type: 'urgent',
+      html: { __html: getLatestNotification() },
+    };
+
+    const currentNotifications = response.data.notifications;
+    const indexToReplace = currentNotifications.findIndex(
+      (notification) => notification.id === 3
+    );
+
+    const updatedNotifications = [...currentNotifications];
+    if (indexToReplace !== -1) {
+      updatedNotifications[indexToReplace] = latestNotif;
+    } else {
+      updatedNotifications.push(latestNotif);
+    }
+
+    return updatedNotifications;
   }
 );
 
 const notificationsSlice = createSlice({
   name: 'notifications',
-  initialState: {
-    notifications: [],
-    displayDrawer: false, // Le test attend cette propriété
-  },
+  initialState,
   reducers: {
-    markAsRead: (state, action) => {
+    markNotificationAsRead: (state, action) => {
+      const notificationId = action.payload;
       state.notifications = state.notifications.filter(
-        (notification) => notification.id !== action.payload
+        (notification) => notification.id !== notificationId
       );
+      console.log(`Notification ${notificationId} has been marked as read`);
     },
     showDrawer: (state) => {
       state.displayDrawer = true;
@@ -41,13 +58,10 @@ const notificationsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(fetchNotifications.fulfilled, (state, action) => {
-      // Le test mocke des notifs et s'attend à ce que displayDrawer soit true à la fin du test ?
-      // Vérifie si le test force le displayDrawer ou si c'est une conséquence du chargement
       state.notifications = action.payload;
     });
   },
 });
 
-export const { markAsRead, showDrawer, hideDrawer } =
-  notificationsSlice.actions;
+export const { markNotificationAsRead, showDrawer, hideDrawer } = notificationsSlice.actions;
 export default notificationsSlice.reducer;

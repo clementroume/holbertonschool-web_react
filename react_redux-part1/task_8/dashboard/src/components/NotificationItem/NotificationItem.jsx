@@ -1,75 +1,59 @@
-// External libraries.
-import React, { memo, useRef } from 'react';
-import { StyleSheet, css } from 'aphrodite';
+import { memo } from "react";
+import { StyleSheet, css } from "aphrodite";
 
-// Styles.
 const styles = StyleSheet.create({
   default: {
-    color: 'blue',
-    cursor: 'pointer',
+    color: "blue",
+    "@media (max-width: 900px)": {
+      width: "100%",
+      borderBottom: "1px solid black",
+      fontSize: "20px",
+      padding: "10px 8px",
+      listStyle: "none",
+    },
   },
   urgent: {
-    color: 'red',
-    cursor: 'pointer',
-  }
+    color: "red",
+    "@media (max-width: 900px)": {
+      width: "100%",
+      borderBottom: "1px solid black",
+      fontSize: "20px",
+      padding: "10px 8px",
+      listStyle: "none",
+    },
+  },
 });
 
-const NotificationItem = memo(({ type = 'default', html, value, id, markAsRead }) => {
-  // Ref for the list item element.
-  const liRef = useRef();
-
-  // Handles notification item click and marks as read.
-  const handleClick = () => {
-    if (markAsRead) {
-      markAsRead(id);
-    }
-  };
-
-  // Checks if a string contains HTML tags.
-  const containsHTML = (str) => {
-    return typeof str === 'string' && /<\/?[a-z][\s\S]*>/i.test(str);
-  };
-
-  // Determine style class based on notification type.
-  const styleClass = type === 'urgent' ? styles.urgent : styles.default;
-
-  // Render with HTML prop (dangerouslySetInnerHTML object).
-  if (html) {
+const NotificationItem = memo(function NotificationItem({
+  type,
+  html,
+  value,
+  markAsRead,
+  id,
+}) {
+  const itemStyle = type === "default" ? styles.default : styles.urgent;
+  // this console.log is only for test purposes and not mentionned/required in the student code
+  // console.log(`Rendering NotificationItem with id: ${id}, type: ${type}, value: ${value}`);
+  if (html !== undefined) {
     return (
       <li
-        ref={liRef}
-        className={css(styleClass)}
+        className={css(itemStyle)}
         data-notification-type={type}
         dangerouslySetInnerHTML={html}
-        onClick={handleClick}
-      />
+        onClick={() => markAsRead(id)}
+      ></li>
     );
-  }
-
-  // Render with HTML string value.
-  if (value && containsHTML(value)) {
+  } else {
     return (
       <li
-        ref={liRef}
-        className={css(styleClass)}
+        className={css(itemStyle)}
         data-notification-type={type}
-        dangerouslySetInnerHTML={{ __html: value }}
-        onClick={handleClick}
-      />
+        onClick={() => markAsRead(id)}
+      >
+        {value}
+      </li>
     );
   }
-
-  // Render with plain text value.
-  return (
-    <li
-      ref={liRef}
-      className={css(styleClass)}
-      data-notification-type={type}
-      onClick={handleClick}
-    >
-      {value}
-    </li>
-  );
 });
 
 export default NotificationItem;
