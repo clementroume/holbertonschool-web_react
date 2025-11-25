@@ -61,7 +61,8 @@ const styles = StyleSheet.create({
 function App() {
   // State management
   const [displayDrawer, setDisplayDrawer] = useState(true);
-  const [user, setUser] = useState({ ...defaultUser });
+  // Use defaultUser reference directly for initial state
+  const [user, setUser] = useState(defaultUser);
   const [notifications, setNotifications] = useState([]);
   const [courses, setCourses] = useState([]);
 
@@ -74,16 +75,17 @@ function App() {
 
   // Memoized callback functions for reference stability
   const logOut = React.useCallback(() => {
-    setUser({ ...defaultUser });
+    // Reset to defaultUser reference
+    setUser(defaultUser);
   }, []);
 
   const logIn = React.useCallback((email, password) => {
-    const newUser = {
-      email: email || '',
-      password: password || '',
+    // Update state directly with passed values
+    setUser({
+      email,
+      password,
       isLoggedIn: true,
-    };
-    setUser(newUser);
+    });
   }, []);
 
   const markNotificationAsRead = React.useCallback((id) => {
@@ -159,9 +161,8 @@ function App() {
     fetchCourses();
   }, [user.isLoggedIn]);
 
-  // DOM setup (CSS Reset only, removed handleKeyDown)
+  // DOM setup (CSS Reset only)
   useEffect(() => {
-    // Check if we're in a browser environment
     if (typeof document === 'undefined') {
       return;
     }
@@ -169,7 +170,6 @@ function App() {
     let styleElement = null;
 
     try {
-      // Add CSS reset styles only if not already present
       if (!document.querySelector('#app-reset-styles')) {
         const resetCSS = `
           *,
@@ -197,7 +197,6 @@ function App() {
       console.warn('Could not set up DOM styles:', error);
     }
 
-    // Cleanup function
     return () => {
       try {
         if (styleElement && styleElement.parentNode) {
@@ -212,7 +211,7 @@ function App() {
         // Ignore cleanup errors
       }
     };
-  }, []); // Empty dependency array as this should only run once
+  }, []);
 
   return (
     <newContext.Provider value={contextValue}>
