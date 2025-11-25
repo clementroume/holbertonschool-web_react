@@ -1,18 +1,21 @@
-// Components.
+import { StyleSheet, css } from 'aphrodite';
 import { getCurrentYear, getFooterCopy } from '../../utils/utils';
 
-function Footer({ user, logOut }) {
+export default function Footer({ user }) {
   return (
-    <footer className='App-footer' style={{ textAlign: 'center' }}>
-      {user.isLoggedIn && (
-        <a href="#" aria-label="Contact us link">
-          contact us
-        </a>
-      )}
-
-      <p style={{ marginTop: '0.5rem' }}>Copyright {getCurrentYear()} - {getFooterCopy(true)}</p>
-    </footer>
+    <div className={css(styles.footer)}>
+      <p>Copyright {getCurrentYear()} - {getFooterCopy(true)}</p>
+      {user.isLoggedIn && <a href="#">Contact us</a>}
+    </div>
   );
 }
 
-export default Footer;
+const styles = StyleSheet.create({
+  footer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontStyle: 'italic',
+    fontFamily: 'sans-serif',
+  },
+});
