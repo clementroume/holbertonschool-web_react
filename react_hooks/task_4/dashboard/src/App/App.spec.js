@@ -235,4 +235,34 @@ describe('App Keyboard Events Tests', () => {
     StyleSheetTestUtils.clearBufferAndResumeStyleInjection();
     alertMock.mockRestore();
   });
+
+  test('Alert when ctrl + h and user is logged in, and returns to Login view', async () => {
+    render(<App />);
+    const user = userEvent.setup();
+
+    await user.type(screen.getByLabelText(/email/i), 'user@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'strongpass');
+    await user.click(screen.getByRole('button', { name: /ok/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: /course list/i })
+      ).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      const keyboardEvent = new KeyboardEvent('keydown', {
+        key: 'h',
+        ctrlKey: true,
+      });
+      document.dispatchEvent(keyboardEvent);
+    });
+
+    await waitFor(() => {
+      expect(alertMock).toHaveBeenCalledWith('Logging you out');
+      expect(
+        screen.getByRole('heading', { name: /log in to continue/i })
+      ).toBeInTheDocument();
+    });
+  });
 });
