@@ -15,14 +15,13 @@ export const fetchNotifications = createAsyncThunk(
   'notifications/fetchNotifications',
   async () => {
     const response = await axios.get(ENDPOINTS.notifications);
-
     return response.data
-      .filter(notification => notification.context.isRead === false)
-      .map(notification => ({
+      .filter((notification) => notification.context.isRead === false)
+      .map((notification) => ({
         id: notification.id,
         type: notification.context.type,
+        value: notification.context.value,
         isRead: notification.context.isRead,
-        value: notification.context.value
       }));
   }
 );
@@ -39,19 +38,18 @@ const notificationsSlice = createSlice({
       console.log(`Notification ${notificationId} has been marked as read`);
     },
   },
-
   extraReducers: (builder) => {
     builder
-    .addCase(fetchNotifications.pending, (state) => {
-      state.loading = true;
-    })
-    .addCase(fetchNotifications.fulfilled, (state, action) => {
-      state.notifications = action.payload;
-      state.loading = false;
-    })
-    .addCase(fetchNotifications.rejected, (state) => {
-      state.loading = false;
-    });
+      .addCase(fetchNotifications.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchNotifications.fulfilled, (state, action) => {
+        state.loading = false;
+        state.notifications = action.payload;
+      })
+      .addCase(fetchNotifications.rejected, (state) => {
+        state.loading = false;
+      });
   },
 });
 

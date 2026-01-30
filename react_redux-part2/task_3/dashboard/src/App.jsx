@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { StyleSheet, css } from 'aphrodite';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchNotifications } from './features/notifications/notificationsSlice';
 import { fetchCourses } from './features/courses/coursesSlice';
@@ -10,6 +11,11 @@ import Notifications from './components/Notifications/Notifications';
 import BodySection from './components/BodySection/BodySection';
 import BodySectionWithMarginBottom from './components/BodySectionWithMarginBottom/BodySectionWithMarginBottom';
 
+const styles = StyleSheet.create({
+  app: {
+    position: 'relative'
+  }
+});
 
 export default function App() {
   const dispatch = useDispatch();
@@ -26,7 +32,7 @@ export default function App() {
   }, [dispatch, isLoggedIn]);
 
   return (
-    <>
+    <div className={css(styles.app)}>
       <Notifications />
       <Header />
       {!isLoggedIn ? (
@@ -42,6 +48,6 @@ export default function App() {
         <p>Holberton School news goes here</p>
       </BodySection>
       <Footer />
-    </>
+    </div>
   );
 }

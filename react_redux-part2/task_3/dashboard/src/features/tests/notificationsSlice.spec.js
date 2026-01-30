@@ -61,9 +61,9 @@ describe('notificationsSlice', () => {
 
     test('should handle fetchNotifications.fulfilled when API request is successful', async () => {
       const notifications = [
-        { id: 1, context: { type: "default", isRead: false, value: "New course available" } },
-        { id: 2, context: { type: "urgent", isRead: false, value: "New resume available" } },
-        { id: 3, context: { type: 'urgent', isRead: false, value: 'Placeholder' } },
+        { id: 1, type: "default", value: "New course available" },
+        { id: 2, type: "urgent", value: "New resume available" },
+        { id: 3, type: 'urgent', value: 'Placeholder' },
       ];
 
       const dispatch = jest.fn();
@@ -72,7 +72,7 @@ describe('notificationsSlice', () => {
       const promise = fetchNotifications()(dispatch, getState, null);
 
       mockAxios.mockResponse({
-        data: notifications,
+        data: { notifications },
       });
 
       await promise;
@@ -83,9 +83,9 @@ describe('notificationsSlice', () => {
 
       expect(fulfilledAction.type).toEqual(fetchNotifications.fulfilled.type);
       expect(fulfilledAction.payload).toEqual([
-        { id: 1, type: "default", isRead: false, value: "New course available" },
-        { id: 2, type: "urgent", isRead: false, value: "New resume available" },
-        { id: 3, type: 'urgent', isRead: false, value: 'Placeholder' },
+        { id: 1, type: "default", value: "New course available" },
+        { id: 2, type: "urgent", value: "New resume available" },
+        { id: 3, type: 'urgent', html: { __html: '<strong>Urgent requirement</strong> - complete by EOD' } },
       ]);
     });
   });
